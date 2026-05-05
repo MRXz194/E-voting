@@ -4,6 +4,7 @@ import hashlib
 import random
 from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
+from sqlalchemy.pool import NullPool
 
 from models import db, ElectionConfig, Voter, Ballot
 from tasks import make_celery, register_tasks
@@ -19,13 +20,15 @@ from crypto.blind_sig import (
 )
 from crypto.hmac_utils import compute_packet_hmac, verify_packet_hmac
 
-# ── App config ─────────────────────────────────────────────────
+#App config 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///evoting.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["CELERY_BROKER_URL"] = "redis://localhost:6379/0"
 app.config["CELERY_RESULT_BACKEND"] = "redis://localhost:6379/0"
+# NullPool: mỗi request tự lấy kết nối SQLite và trả ngay, tránh QueuePool overflow khi stress test
+app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"poolclass": NullPool}
 
 db.init_app(app)
 celery = make_celery(app)
@@ -249,11 +252,18 @@ def register_async():
 
     data = request.get_json()
     voter_id = data.get("voter_id", "").strip()
+    secret_code = data.get("secret_code", "").strip()
     blinded_int = int(data.get("blinded_token"))
 
     voter = Voter.query.filter_by(voter_id=voter_id).first()
-    if not voter or voter.status != "registered":
-        return jsonify({"error": "Voter không đủ điều kiện đăng ký"}), 400
+    if not voter:
+        return jsonify({"error": "Voter ID không tồn tại"}), 404
+
+    if voter.secret_code and secret_code != voter.secret_code:
+        return jsonify({"error": "Mã bí mật (Secret Code) sai!"}), 403
+
+    if voter.status != "registered":
+        return jsonify({"error": "Credential đã được cấp trước đó"}), 400
 
     task = sign_task.delay(blinded_int, int(cfg.rsa_d), int(cfg.rsa_N))
     voter.status = "credential_issued"

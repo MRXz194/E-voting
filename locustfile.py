@@ -50,7 +50,10 @@ class EVoterUser(HttpUser):
 
     def on_start(self):
         """Khởi tạo khi user bắt đầu"""
-        self.voter_id = f"stress_voter_{random.randint(10**8, 10**9)}"
+        # Mỗi user chọn 1 index cố định để tránh bị trùng ID giữa các task của cùng 1 user
+        self.idx = random.randint(0, 9999)
+        self.voter_id = f"stress_voter_{self.idx}"
+        self.secret_code = f"secret_{self.idx}"
         self.token = None
         self.credential = None
         self.eg_pub = None
@@ -96,24 +99,33 @@ class EVoterUser(HttpUser):
 
         # Step 3: Request async sign
         with self.client.post("/api/register/async",
-                              json={"voter_id": self.voter_id, "blinded_token": blinded},
+                              json={
+                                  "voter_id": self.voter_id, 
+                                  "secret_code": self.secret_code,
+                                  "blinded_token": str(blinded)
+                              },
                               catch_response=True) as resp:
             if resp.status_code != 200:
-                resp.failure(f"Register failed: {resp.status_code}")
+                resp.failure(f"Register failed: {resp.status_code} {resp.text}")
                 return
             task_id = resp.json().get("task_id")
 
         # Step 4: Poll result
         blind_sig = None
         for _ in range(20):  # max 20 polls
-            time.sleep(0.1)
+            time.sleep(0.3) # Wait a bit longer for task completion
             r2 = self.client.get(f"/api/register/result/{task_id}")
-            data = r2.json()
-            if data.get("status") == "done":
-                blind_sig = data.get("blind_signature")
-                break
-
+            if r2.status_code == 200:
+                data = r2.json()
+                if data.get("status") == "done": 
+                    blind_sig = data.get("blind_signature")
+                    break
+                elif data.get("status") == "failed":
+                    resp.failure("Celery task failed")
+                    return
+        
         if blind_sig is None:
+            resp.failure("Polling timeout")
             return
 
         # Step 5: Unblind → credential
@@ -167,5 +179,7 @@ class EVoterUser(HttpUser):
             else:
                 resp.failure(f"Vote failed: {resp.status_code} {resp.text}")
 
-        # Reset để có thể chạy lại (với voter_id mới)
-        self.voter_id = f"stress_voter_{random.randint(10**8, 10**9)}"
+        # Reset để có thể chạy lại (chọn index mới hợp lệ trong 10k voter)
+        self.idx = random.randint(0, 9999)
+        self.voter_id = f"stress_voter_{self.idx}"
+        self.secret_code = f"secret_{self.idx}"
