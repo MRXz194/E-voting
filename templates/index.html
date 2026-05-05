@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card"
+    style="text-align: center; padding: 4rem 2rem; margin-bottom: 2rem; position: relative; overflow: hidden;">
+    <div
+        style="position: absolute; top: -50%; left: -10%; width: 50%; height: 200%; background: radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, transparent 70%); z-index: 0;">
+    </div>
+
+    <div style="position: relative; z-index: 1;">
+        {% if cfg %}
+        <h1 style="font-size: 3.5rem; margin-bottom: 0.5rem;">{{ cfg.election_name }}</h1>
+        <p style="font-size: 1.2rem; color: #a5b4fc;">Trạng thái hệ thống:
+            <span class="badge info" style="font-size: 1rem;">{{ cfg.status | upper }}</span>
+        </p>
+        {% else %}
+        <h1 style="font-size: 3.5rem; margin-bottom: 0.5rem;">Hệ Thống Bầu Cử Điện Tử</h1>
+        <p style="font-size: 1.2rem;">Chưa có cuộc bầu cử nào được thiết lập.</p>
+        {% endif %}
+
+        <div style="margin-top: 2.5rem; display: flex; gap: 1rem; justify-content: center;">
+            <a href="/register" class="btn btn-outline">Nhận Credential</a>
+            <a href="/vote" class="btn btn-primary">Bỏ Phiếu Ngay</a>
+            {% if not cfg %}
+            <a href="/setup" class="btn btn-outline">Thiết Lập Mới (Admin)</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% if cfg %}
+<div class="grid-3">
+    <div class="card" style="background: linear-gradient(145deg, rgba(26, 32, 53, 0.8), rgba(15, 23, 42, 0.9));">
+        <h3><span style="color: var(--primary);">01</span> Giai Đoạn</h3>
+        <p>Quy trình hiện tại là:</p>
+        <h2 class="status-{{ cfg.status }}" style="margin-top: 1rem; font-size: 2rem;">{{ cfg.status | capitalize }}
+        </h2>
+    </div>
+
+    <div class="card">
+        <h3><span style="color: var(--accent);">02</span> Cử Tri</h3>
+        <p>Số lượng người đăng ký hợp lệ:</p>
+        <h2 style="margin-top: 1rem; font-size: 2.5rem;">{{ voter_count }}</h2>
+    </div>
+
+    <div class="card">
+        <h3><span style="color: var(--warning);">03</span> Phiếu Đã Thu</h3>
+        <p>Tổng số phiếu trong Bulletin Board:</p>
+        <h2 style="margin-top: 1rem; font-size: 2.5rem;">{{ ballot_count }}</h2>
+    </div>
+</div>
+
+<div class="card mt-2">
+    <div class="flex-between">
+        <h2>Kiến trúc Cryptography</h2>
+        <a href="/api/public-keys" target="_blank" class="badge info">Xem Public API</a>
+    </div>
+    <div class="table-responsive mt-1">
+        <table>
+            <tbody>
+                <tr>
+                    <td style="width: 25%;"><strong>Mã hóa Phiếu (ElGamal)</strong></td>
+                    <td>
+                        <span class="badge success">Homomorphic Tally</span><br>
+                        <small class="text-muted">Nhân các ciphertext để lấy tổng mà không cần giải mã từng phiếu, dựa
+                            trên bài toán DLP.</small>
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Phân phối Token (RSA)</strong></td>
+                    <td>
+                        <span class="badge success">Blind Signature</span><br>
+                        <small class="text-muted">Đảm bảo danh tính cử tri tách biệt với nội dung phiếu bầu bằng thuật
+                            toán Chaum.</small>
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Xác thực Gói tin</strong></td>
+                    <td>
+                        <span class="badge success">HMAC-SHA256</span><br>
+                        <small class="text-muted">Chống tấn công thay đổi nội dung trên đường truyền tới Bulletin Board
+                            (BB API).</small>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

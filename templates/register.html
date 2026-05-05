@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card" style="max-width: 600px; margin: 0 auto;">
+    <div class="text-center mb-2">
+        <h2>Đăng Ký Khóa (Registration Phase)</h2>
+        <p>Thuật toán: RSA Blind Signature (Chaum)</p>
+    </div>
+
+    <div
+        style="background: rgba(99, 102, 241, 0.1); padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem; border-left: 4px solid var(--primary);">
+        <h4 style="margin-bottom: 0.5rem; color: #818cf8;">Quy Trình:</h4>
+        <ol style="margin-left: 1.5rem; color: var(--text-muted); font-size: 0.9rem; line-height: 1.5;">
+            <li>Trình duyệt sinh ngẫu nhiên Token và Blinding Factor <span style="font-family: monospace;">r</span>.
+            </li>
+            <li>Trình duyệt "mù hóa" Token và gửi lên Registration Authority (RA).</li>
+            <li>RA kiểm tra danh tính cử tri (ID) và ký lên Token mù.</li>
+            <li>Trình duyệt "giải mù" để có được Signature thật, tạo thành Credential hợp lệ.</li>
+        </ol>
+    </div>
+
+    <div id="register-form">
+        <div class="form-group">
+            <label for="voter_id">Mã Cử Tri (Voter ID)</label>
+            <input type="text" id="voter_id" name="voter_id" placeholder="VD: voter_12345" required>
+        </div>
+
+        <button onclick="performBlindSignature()" class="btn btn-primary" style="width: 100%;">
+            Thực Hiện Blind Signature Trình Duyệt
+        </button>
+    </div>
+
+    <div id="status-console" class="mt-2"
+        style="display: none; background: rgba(0,0,0,0.4); padding: 1rem; border-radius: 8px; font-family: monospace; font-size: 0.85rem; color: #a5b4fc; word-break: break-all;">
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='crypto.js') }}"></script>
+<script>
+    async function performBlindSignature() {
+        const voterId = document.getElementById('voter_id').value.trim();
+        if (!voterId) return alert("Vui lòng nhập Voter ID");
+
+        const consoleDiv = document.getElementById('status-console');
+        consoleDiv.style.display = 'block';
+        consoleDiv.innerHTML = '> Lấy khóa công khai từ Server...<br>';
+
+        try {
+            const res = await fetch('/api/public-keys');
+            const keys = await res.json();
+            const rsaN = BigInt(keys.rsa.N);
+            const rsaE = BigInt(keys.rsa.e);
+
+            const token = `tok_${voterId}_${Math.floor(Math.random() * 1000000000)}`;
+            consoleDiv.innerHTML += `> Token tạo cục bộ: ${token}<br>`;
+
+            consoleDiv.innerHTML += `> Đang tính Blinded Token...<br>`;
+            const { blinded, r } = await CryptoUtils.blindToken(token, rsaN, rsaE);
+
+            consoleDiv.innerHTML += `> Gửi Blinded Token lên RA để ký...<br>`;
+            const signRes = await fetch('/api/register/sync', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ voter_id: voterId, blinded_token: blinded })
+            });
+
+            const signData = await signRes.json();
+            if (signData.error) throw new Error(signData.error);
+
+            consoleDiv.innerHTML += `> Giải mù chữ ký (Unblinding)...<br>`;
+            const credential = CryptoUtils.unblindSignature(signData.blind_signature, r, rsaN);
+
+            sessionStorage.setItem("voter_id", voterId);
+            sessionStorage.setItem("voter_token", token);
+            sessionStorage.setItem("voter_credential", credential);
+
+            consoleDiv.innerHTML += `<span style="color: #34d399">> THÀNH CÔNG! Đã lưu Credential Zero-Knowledge vào SessionStorage. Chuyển sang bỏ phiếu...</span><br>`;
+            setTimeout(() => { window.location.href = '/vote'; }, 2000);
+
+        } catch (err) {
+            consoleDiv.innerHTML += `<span style="color: #ef4444">> LỖI: ${err.message}</span><br>`;
+        }
+    }
+</script>
+{% endblock %}

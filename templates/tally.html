@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="text-center mb-2">
+    <h1>Kết Quả Kiểm Phiếu</h1>
+    <p>Thuật toán: <span class="badge success">Homomorphic Addition</span> + <span class="badge info">Baby-step
+            Giant-step</span></p>
+</div>
+
+<div class="grid-2">
+    <div class="card">
+        <h3>Toàn Tập Kết Quả</h3>
+        <p>Tổng số phiếu đồng thuận: <strong>{{ total }}</strong></p>
+
+        <div class="mt-2">
+            {% for r in results %}
+            <div style="margin-bottom: 1.5rem;">
+                <div class="flex-between">
+                    <span style="font-size: 1.1rem; font-weight: 500;">
+                        {{ r.candidate }}
+                        {% if winner and winner.candidate == r.candidate and r.votes > 0 %}
+                        <span class="badge warning" style="margin-left: 0.5rem;">WINNER</span>
+                        {% endif %}
+                    </span>
+                    <span style="font-size: 1.1rem; font-weight: 600; color: white;">{{ r.votes }} phiếu ({{ r.pct
+                        }}%)</span>
+                </div>
+                <div
+                    style="width: 100%; background: rgba(0,0,0,0.3); height: 12px; border-radius: 6px; margin-top: 0.5rem; overflow: hidden;">
+                    <div
+                        style="height: 100%; width: {{ r.pct }}%; background: linear-gradient(90deg, var(--primary), var(--secondary)); border-radius: 6px;">
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Giải Mã Đồng Cấu Từng Ứng Viên</h3>
+        <p style="font-size: 0.9rem;" class="text-muted">Do tính chất \( E(m_1) \otimes E(m_2) = E(m_1 + m_2) \), EA
+            nhân toàn bộ Ciphertext của từng ứng viên trên Bulletin Board, sau đó EA mở mã khóa Private Key của ElGamal
+            <strong>(chỉ 1 lần giải mã / 1 ứng viên)</strong>.</p>
+
+        <div
+            style="background: rgba(0,0,0,0.3); padding: 1.5rem; border-radius: 8px; border: 1px solid var(--border); margin-top: 1rem;">
+            <p style="color: #34d399; font-weight: 500; font-family: monospace;">> Aggregate(C1_i, C2_i) = (C1_sum,
+                C2_sum)</p>
+            <p style="color: #818cf8; font-weight: 500; font-family: monospace;">> Decrypt(C1_sum, C2_sum) = M_sum</p>
+            <p style="color: #fbbf24; font-weight: 500; font-family: monospace;">> M_sum == g^(Tổng_Phiếu) mod p</p>
+
+            <hr style="border-color: rgba(255,255,255,0.1); margin: 1rem 0;">
+
+            <p style="font-size: 0.9rem;" class="text-muted">
+                Dùng thuật toán <strong style="color: white">Baby-step Giant-step (BSGS)</strong> với độ phức tạp
+                \(\mathcal{O}(\sqrt{N})\) để giải hàm logarit rời rạc (DLP) tìm ra "Tổng_Phiếu" (từ mũ của g) trong tích
+                tắc cho 100,000+ phiếu.
+            </p>
+        </div>
+    </div>
+</div>
+
+<div class="text-center mt-2">
+    <a href="/admin" class="btn btn-outline">Trở Về Dashboard</a>
+</div>
+{% endblock %}

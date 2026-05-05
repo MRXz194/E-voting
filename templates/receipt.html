@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card"
+    style="max-width: 600px; margin: 2rem auto; text-align: center; background: linear-gradient(145deg, rgba(16, 185, 129, 0.1), transparent);">
+
+    <div
+        style="background: rgba(16, 185, 129, 0.2); width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+        <svg fill="none" stroke="#34d399" stroke-width="2" viewBox="0 0 24 24" style="width: 40px; height: 40px;">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path>
+        </svg>
+    </div>
+
+    <h2 style="color: #34d399; margin-bottom: 0.5rem;">Cảm ơn bạn đã bỏ phiếu!</h2>
+    <p>Phiếu của bạn đã được mã hóa, gói tin hợp lệ và lưu vào Bulletin Board.</p>
+
+    <div
+        style="background: rgba(0,0,0,0.3); padding: 1.5rem; border-radius: 8px; border: 1px solid var(--border); margin: 2rem 0; text-align: left;">
+        <p style="margin-bottom: 0.5rem; color: #a5b4fc; font-weight: 500;">Biên nhận (Receipt Tracker):</p>
+        <div class="hash-text" style="font-size: 1.1rem; padding: 1rem;">
+            {{ receipt }}
+        </div>
+        <p style="font-size: 0.85rem; margin-top: 1rem;" class="text-muted">
+            Hãy sao chép Receipt trên. Bạn có thể dùng nó để kiểm tra công khai trên hệ thống xem phiếu của mình đã nằm
+            trong hòm phiếu hay chưa. Nội dung ({{ chosen }}) hoàn toàn được ẩn.
+        </p>
+    </div>
+
+    <div style="display: flex; gap: 1rem; justify-content: center;">
+        <a href="/" class="btn btn-primary">Về Trang Chủ</a>
+        <a href="/bulletin-board" class="btn btn-outline">Xem Bảng Tin</a>
+    </div>
+</div>
+{% endblock %}

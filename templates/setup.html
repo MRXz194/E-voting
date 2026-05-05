@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card" style="max-width: 600px; margin: 0 auto;">
+    <h2 class="mb-2">Tái cấu trúc: Setup Bầu Cử Mới (EA)</h2>
+    <p>Election Authority (EA) sẽ sinh cặp khóa ElGamal (mã hóa) và RSA (chữ ký mù).</p>
+
+    <div class="flash warning mb-2">
+        <strong>Lưu ý:</strong> Hành động này sẽ TẠO MỚI toàn bộ data, XÓA sạch cấu hình cũ, cử tri, và thùng phiếu hiện
+        tại. Dùng cho demo.
+    </div>
+
+    <form action="/setup" method="POST">
+        <div class="form-group">
+            <label for="election_name">Tên Cuộc Bầu Cử</label>
+            <input type="text" id="election_name" name="election_name" placeholder="VD: Bầu cử Tổng Thống 2026" required
+                value="Bầu cử Giám Đốc EA">
+        </div>
+
+        <div class="form-group">
+            <label for="candidates">Danh Sách Ứng Viên</label>
+            <p style="font-size: 0.85rem;" class="mb-1">Tách nhau bởi dấu phẩy (,). Hệ thống Homomorphic Tally sử dụng
+                Per-Candidate Scheme.</p>
+            <input type="text" id="candidates" name="candidates" placeholder="Thí sinh A, Thí sinh B, Thí sinh C"
+                required value="Alice, Bob, Charlie">
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
+            Khởi Tạo && Sinh Khóa
+        </button>
+    </form>
+</div>
+{% endblock %}
