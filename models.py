@@ -38,6 +38,7 @@ class Voter(db.Model):
     id           = db.Column(db.Integer, primary_key=True)
     voter_id     = db.Column(db.String(100), unique=True, nullable=False)
     name         = db.Column(db.String(200))
+    secret_code  = db.Column(db.String(10), nullable=True) # Mã bí mật để đăng ký
     status       = db.Column(db.String(20), default="registered")
     # registered → credential_issued → voted
     registered_at = db.Column(db.DateTime, default=datetime.utcnow)

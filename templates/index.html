@@ -19,10 +19,12 @@
         {% endif %}
 
         <div style="margin-top: 2.5rem; display: flex; gap: 1rem; justify-content: center;">
-            <a href="/register" class="btn btn-outline">Nhận Credential</a>
-            <a href="/vote" class="btn btn-primary">Bỏ Phiếu Ngay</a>
-            {% if not cfg %}
-            <a href="/setup" class="btn btn-outline">Thiết Lập Mới (Admin)</a>
+            <a href="/register" class="btn btn-outline" {% if cfg and cfg.status not in ['setup', 'registration'
+                , 'voting' ] %}style="opacity:0.5; pointer-events:none;" {% endif %}>Nhận Credential</a>
+            <a href="/vote" class="btn btn-primary" {% if not cfg or cfg.status !='voting'
+                %}style="opacity:0.5; pointer-events:none;" {% endif %}>Bỏ Phiếu Ngay</a>
+            {% if not cfg or cfg.status in ['setup', 'registration'] %}
+            <a href="/admin" class="btn btn-outline">Vào Admin (Để Mở Phiếu)</a>
             {% endif %}
         </div>
     </div>
@@ -40,13 +42,13 @@
     <div class="card">
         <h3><span style="color: var(--accent);">02</span> Cử Tri</h3>
         <p>Số lượng người đăng ký hợp lệ:</p>
-        <h2 style="margin-top: 1rem; font-size: 2.5rem;">{{ voter_count }}</h2>
+        <h2 style="margin-top: 1rem; font-size: 2.5rem;">{{ voters_count }}</h2>
     </div>
 
     <div class="card">
         <h3><span style="color: var(--warning);">03</span> Phiếu Đã Thu</h3>
         <p>Tổng số phiếu trong Bulletin Board:</p>
-        <h2 style="margin-top: 1rem; font-size: 2.5rem;">{{ ballot_count }}</h2>
+        <h2 style="margin-top: 1rem; font-size: 2.5rem;">{{ ballots_count }}</h2>
     </div>
 </div>
 

@@ -92,8 +92,8 @@
             for (let i = 0; i < numCandidates; i++) {
                 const voteBit = (i === candidateIdx) ? 1n : 0n;
                 const ct = CryptoUtils.elGamalEncrypt(voteBit, p, g, y);
-                c1_arr.push(ct.c1);
-                c2_arr.push(ct.c2);
+                c1_arr.push(ct.c1.toString());
+                c2_arr.push(ct.c2.toString());
             }
 
             const c1Json = JSON.stringify(c1_arr);

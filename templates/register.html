@@ -25,6 +25,11 @@
             <input type="text" id="voter_id" name="voter_id" placeholder="VD: voter_12345" required>
         </div>
 
+        <div class="form-group">
+            <label for="secret_code">Mã Bí Mật (Secret Code)</label>
+            <input type="password" id="secret_code" name="secret_code" placeholder="Mã 6 số cấp bởi Admin" required>
+        </div>
+
         <button onclick="performBlindSignature()" class="btn btn-primary" style="width: 100%;">
             Thực Hiện Blind Signature Trình Duyệt
         </button>
@@ -39,7 +44,8 @@
 <script>
     async function performBlindSignature() {
         const voterId = document.getElementById('voter_id').value.trim();
-        if (!voterId) return alert("Vui lòng nhập Voter ID");
+        const secretCode = document.getElementById('secret_code').value.trim();
+        if (!voterId || !secretCode) return alert("Vui lòng nhập đầy đủ Voter ID và Mã Bí Mật");
 
         const consoleDiv = document.getElementById('status-console');
         consoleDiv.style.display = 'block';
@@ -61,7 +67,11 @@
             const signRes = await fetch('/api/register/sync', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ voter_id: voterId, blinded_token: blinded })
+                body: JSON.stringify({
+                    voter_id: voterId,
+                    secret_code: secretCode,
+                    blinded_token: blinded
+                })
             });
 
             const signData = await signRes.json();

@@ -86,6 +86,7 @@
                 <thead>
                     <tr>
                         <th>ID</th>
+                        <th>Mã Bí Mật</th>
                         <th>Trạng Thái</th>
                     </tr>
                 </thead>
@@ -93,6 +94,8 @@
                     {% for v in voters %}
                     <tr>
                         <td style="font-family:monospace; font-size:0.9rem;">{{ v.voter_id }}</td>
+                        <td style="font-family:monospace; font-weight:bold; color:var(--accent);">{{ v.secret_code }}
+                        </td>
                         <td>
                             {% if v.status == 'voted' %}
                             <span class="badge success">Đã bầu</span>
@@ -139,7 +142,7 @@
             {% endif %}
 
             <div class="mt-1 text-center">
-                <a href="/bulletin-board" class="btn btn-outline" style="width:100%; padding: 0.5rem;">Xem Đầy Đủ
+                <a href="/bulletin_board" class="btn btn-outline" style="width:100%; padding: 0.5rem;">Xem Đầy Đủ
                     (Bulletin Board)</a>
             </div>
         </div>

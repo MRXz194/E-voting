@@ -9,12 +9,13 @@ def client():
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///:memory:"
     with app.test_client() as client:
         with app.app_context():
+            db.drop_all()
             db.create_all()
         yield client
 
 def test_api_workflow(client):
     # 1. Setup election
-    client.post("/setup", data={"candidates_str": "Alice, Bob"})
+    client.post("/setup", data={"election_name": "Test Election", "candidates_str": "Alice, Bob"})
     
     # 2. Get Public Keys
     res = client.get("/api/public-keys")
@@ -29,8 +30,13 @@ def test_api_workflow(client):
     pub = RSAPublicKey(rsa_n, rsa_e)
     
     # 3. Add Voter
-    client.post("/admin/add-voter", data={"voter_id": "voter1"})
+    client.post("/admin/add-voter", data={"voter_id": "voter1", "name": "Voter 1"})
     
+    # Get secret code from DB
+    with app.app_context():
+        voter = Voter.query.filter_by(voter_id="voter1").first()
+        secret_code = voter.secret_code
+
     # 4. Open Voting
     client.post("/admin/open-voting")
     
@@ -40,6 +46,7 @@ def test_api_workflow(client):
     
     reg_res = client.post("/api/register/sync", json={
         "voter_id": "voter1",
+        "secret_code": secret_code,
         "blinded_token": str(blinded)
     })
     assert reg_res.status_code == 200
@@ -71,8 +78,8 @@ def test_api_workflow(client):
     assert "receipt" in vote_res.get_json()
 
 def test_double_voting_prevention(client):
-    client.post("/setup", data={"candidates_str": "Alice, Bob"})
-    client.post("/admin/add-voter", data={"voter_id": "voter1"})
+    client.post("/setup", data={"election_name": "Test Election", "candidates_str": "Alice, Bob"})
+    client.post("/admin/add-voter", data={"voter_id": "voter1", "name": "Voter 1"})
     client.post("/admin/open-voting")
     
     token = "token123"
