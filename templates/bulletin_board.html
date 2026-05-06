@@ -1,50 +1,59 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="flex-between mb-2">
-    <div>
-        <h1>Bảng Tin Công Khai (Bulletin Board)</h1>
-        <p>Tất cả phiếu bầu đã mã hóa được lưu Append-Only trên mạng.</p>
+<div class="card glass animate-fade-in" style="margin-top: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <div>
+            <h2 class="text-gradient" style="margin-bottom: 0.5rem;"><i class="fa-solid fa-list-check"></i> Public Ledger</h2>
+            <p class="text-muted">Immutable Bulletin Board. All cast ballots are fully encrypted and verifiable.</p>
+        </div>
+        <div class="text-right">
+            <span class="badge badge-success" style="font-size: 1.1rem; padding: 0.6rem 1rem;">
+                Total Ballots: {{ ballots|length }}
+            </span>
+        </div>
     </div>
-    <form action="/verify/check" method="GET" style="display: flex; gap: 0.5rem;"
-        onsubmit="event.preventDefault(); window.location.href='/verify/' + document.getElementById('search_receipt').value;">
-        <input type="text" id="search_receipt" placeholder="Tìm bằng Receipt Hash..." style="min-width: 300px;">
-        <button type="submit" class="btn btn-primary">Tìm</button>
-    </form>
-</div>
 
-<div class="card" style="padding: 0;">
-    <div class="table-responsive">
-        <table style="margin-top: 0;">
-            <thead style="background: rgba(0,0,0,0.2);">
-                <tr>
-                    <th style="padding: 1.5rem 1rem;">Thời Gian Ghi (UTC)</th>
-                    <th style="padding: 1.5rem 1rem;">Receipt (SHA-256)</th>
-                    <th style="padding: 1.5rem 1rem;">Voter Token HMAC Dấu</th>
-                    <th style="padding: 1.5rem 1rem;">ElGamal C1</th>
-                    <th style="padding: 1.5rem 1rem;">ElGamal C2</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% if ballots %}
-                {% for b in ballots %}
-                <tr>
-                    <td style="font-family: monospace; font-size: 0.85rem;">{{ b.submitted_at.strftime('%Y-%m-%d
-                        %H:%M:%S') }}</td>
-                    <td class="hash-text" title="{{ b.receipt }}"><a href="/verify/{{ b.receipt }}"
-                            style="color: inherit; text-decoration: none;">{{ b.receipt[:16] }}...</a></td>
-                    <td class="hash-text">{{ b.token_hash[:16] }}...</td>
-                    <td class="hash-text">{{ b.c1[:16] }}...</td>
-                    <td class="hash-text">{{ b.c2[:16] }}...</td>
-                </tr>
-                {% endfor %}
-                {% else %}
-                <tr>
-                    <td colspan="5" class="text-center" style="padding: 3rem;">Chưa có phiếu bầu nào được ghi.</td>
-                </tr>
-                {% endif %}
-            </tbody>
-        </table>
+    {% if ballots %}
+    <div class="grid grid-cols-2">
+        {% for b in ballots %}
+        <div class="card" style="background: rgba(0,0,0,0.3); border-color: var(--border); padding: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
+                <span class="text-muted" style="font-size: 0.85rem;"><i class="fa-solid fa-clock"></i> {{ b.submitted_at.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+                <span class="badge badge-primary" style="font-size: 0.7rem;">Verified</span>
+            </div>
+            
+            <div style="margin-bottom: 1rem;">
+                <label class="form-label" style="font-size: 0.8rem;">Receipt Hash</label>
+                <div style="font-family: monospace; font-size: 0.8rem; background: rgba(255,255,255,0.05); padding: 0.5rem; border-radius: 4px; word-break: break-all; color: var(--success);">
+                    {{ b.receipt }}
+                </div>
+            </div>
+
+            <div>
+                <label class="form-label" style="font-size: 0.8rem;">Voter Token (Anonymous)</label>
+                <div style="font-family: monospace; font-size: 0.8rem; background: rgba(255,255,255,0.05); padding: 0.5rem; border-radius: 4px; word-break: break-all; color: var(--text-muted);">
+                    {{ b.token_hash[:32] }}...
+                </div>
+            </div>
+            
+            <div style="margin-top: 1rem;">
+                <details>
+                    <summary style="cursor: pointer; color: var(--primary); font-size: 0.85rem; font-weight: 500;">Show ElGamal Ciphertexts</summary>
+                    <div style="margin-top: 0.5rem; font-family: monospace; font-size: 0.75rem; color: var(--text-muted); background: rgba(0,0,0,0.5); padding: 0.5rem; border-radius: 4px; max-height: 100px; overflow-y: auto;">
+                        <strong>C1 Array:</strong><br>{{ b.c1 }}<br><br>
+                        <strong>C2 Array:</strong><br>{{ b.c2 }}
+                    </div>
+                </details>
+            </div>
+        </div>
+        {% endfor %}
     </div>
+    {% else %}
+    <div class="text-center" style="padding: 4rem 0;">
+        <i class="fa-solid fa-box-open" style="font-size: 4rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
+        <h3 class="text-muted">The ballot box is currently empty</h3>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}

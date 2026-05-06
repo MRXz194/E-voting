@@ -14,7 +14,7 @@ def client():
 
 def test_unauthorized_voter_registration(client):
     """RA should not sign token for voter not in list"""
-    client.post("/setup", data={"election_name": "Test Election", "candidates_str": "A, B"})
+    client.post("/admin", data={"election_name": "Test Election", "candidates_str": "A, B"})
     res = client.post("/api/register/sync", json={
         "voter_id": "intruder_123",
         "secret_code": "123456",
@@ -24,7 +24,7 @@ def test_unauthorized_voter_registration(client):
 
 def test_tampered_hmac_packet(client):
     """Voting should fail if HMAC doesn't match payload"""
-    client.post("/setup", data={"election_name": "Test Election", "candidates_str": "A, B"})
+    client.post("/admin", data={"election_name": "Test Election", "candidates_str": "A, B"})
     client.post("/admin/open-voting") # MUST OPEN VOTING FIRST
     token = "token123"
     credential = "999" # fake
@@ -44,15 +44,15 @@ def test_tampered_hmac_packet(client):
 def test_voting_session_not_open(client):
     """Should fail if election status is not 'voting'"""
     # Just setup, but don't 'open-voting'
-    client.post("/setup", data={"election_name": "Test Election", "candidates_str": "A, B"})
+    client.post("/admin", data={"election_name": "Test Election", "candidates_str": "A, B"})
     res = client.post("/api/vote", json={"token": "t", "credential": "c"})
     assert res.status_code == 400
     assert "Chưa mở bỏ phiếu" in res.get_json()["error"]
 
 def test_tallying_before_voting_closed(client):
     """Tallying page should redirect or warn if status is not 'tallying'"""
-    client.post("/setup", data={"election_name": "Test Election", "candidates_str": "A, B"})
+    client.post("/admin", data={"election_name": "Test Election", "candidates_str": "A, B"})
     # Status is 'setup' right now
-    res = client.get("/tally", follow_redirects=True)
+    res = client.get("/admin", follow_redirects=True)
     # Check for the warning message in the response text (using substring)
-    assert "Vui lòng đóng bỏ phiếu trước khi kiểm phiếu" in res.get_data(as_text=True)
+    assert "Tallying is Locked" in res.get_data(as_text=True)

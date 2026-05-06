@@ -1,453 +1,73 @@
 <!DOCTYPE html>
-<html lang="vi">
-
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>E-Voting 2026 — Crypto System</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg-color: #0b0f19;
-            --surface: rgba(26, 32, 53, 0.7);
-            --surface-hover: rgba(45, 55, 72, 0.9);
-            --border: rgba(255, 255, 255, 0.1);
-            --primary: #6366f1;
-            --primary-glow: rgba(99, 102, 241, 0.4);
-            --secondary: #8b5cf6;
-            --accent: #10b981;
-            --danger: #ef4444;
-            --warning: #f59e0b;
-            --text: #f3f4f6;
-            --text-muted: #9ca3af;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Outfit', sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            background-image:
-                radial-gradient(circle at 15% 50%, rgba(99, 102, 241, 0.15), transparent 25%),
-                radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.15), transparent 25%);
-            background-attachment: fixed;
-            overflow-x: hidden;
-        }
-
-        /* Navbar */
-        nav {
-            background: rgba(11, 15, 25, 0.8);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border-bottom: 1px solid var(--border);
-            padding: 1rem 2rem;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .nav-brand {
-            font-size: 1.5rem;
-            font-weight: 700;
-            background: linear-gradient(to right, var(--primary), var(--secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-decoration: none;
-            letter-spacing: -0.5px;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 1.5rem;
-        }
-
-        .nav-links a {
-            color: var(--text-muted);
-            text-decoration: none;
-            font-weight: 500;
-            font-size: 0.95rem;
-            transition: all 0.3s ease;
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-        }
-
-        .nav-links a:hover {
-            color: white;
-            background: var(--surface);
-        }
-
-        /* Container & Glassmorphism Cards */
-        .container {
-            max-width: 1200px;
-            margin: 2rem auto;
-            padding: 0 1.5rem;
-            flex: 1;
-            width: 100%;
-        }
-
-        .card {
-            background: var(--surface);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 2rem;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .card:hover {
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
-            border-color: rgba(255, 255, 255, 0.15);
-        }
-
-        /* Typography */
-        h1,
-        h2,
-        h3 {
-            color: white;
-            margin-bottom: 1rem;
-            font-weight: 600;
-        }
-
-        h1 {
-            font-size: 2.5rem;
-            letter-spacing: -1px;
-        }
-
-        h2 {
-            font-size: 1.8rem;
-        }
-
-        p {
-            line-height: 1.6;
-            margin-bottom: 1rem;
-            color: var(--text-muted);
-        }
-
-        /* Badges */
-        .badge {
-            display: inline-block;
-            padding: 0.25rem 0.75rem;
-            border-radius: 9999px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .badge.info {
-            background: rgba(99, 102, 241, 0.1);
-            color: #818cf8;
-            border: 1px solid rgba(99, 102, 241, 0.2);
-        }
-
-        .badge.success {
-            background: rgba(16, 185, 129, 0.1);
-            color: #34d399;
-            border: 1px solid rgba(16, 185, 129, 0.2);
-        }
-
-        .badge.warning {
-            background: rgba(245, 158, 11, 0.1);
-            color: #fbbf24;
-            border: 1px solid rgba(245, 158, 11, 0.2);
-        }
-
-        .status-setup {
-            color: var(--warning);
-        }
-
-        .status-registration {
-            color: var(--primary);
-        }
-
-        .status-voting {
-            color: var(--accent);
-        }
-
-        .status-tallying {
-            color: var(--secondary);
-        }
-
-        .status-done {
-            color: var(--text);
-        }
-
-        /* Form elements */
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-            font-size: 0.95rem;
-            color: var(--text);
-        }
-
-        input[type="text"],
-        input[type="password"],
-        input[type="number"],
-        select,
-        textarea {
-            width: 100%;
-            padding: 0.8rem 1rem;
-            background: rgba(0, 0, 0, 0.2);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: white;
-            font-family: inherit;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-        }
-
-        input:focus,
-        select:focus,
-        textarea:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px var(--primary-glow);
-        }
-
-        /* Buttons */
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            padding: 0.8rem 1.5rem;
-            border: none;
-            border-radius: 8px;
-            font-family: inherit;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            color: white;
-            box-shadow: 0 4px 15px var(--primary-glow);
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px var(--primary-glow);
-        }
-
-        .btn-outline {
-            background: transparent;
-            color: white;
-            border: 1px solid var(--border);
-        }
-
-        .btn-outline:hover {
-            background: var(--surface-hover);
-            border-color: rgba(255, 255, 255, 0.3);
-        }
-
-        .btn-danger {
-            background: rgba(239, 68, 68, 0.1);
-            color: var(--danger);
-            border: 1px solid rgba(239, 68, 68, 0.2);
-        }
-
-        .btn-danger:hover {
-            background: rgba(239, 68, 68, 0.2);
-        }
-
-        /* Flash Messages */
-        .flash-container {
-            margin-bottom: 2rem;
-        }
-
-        .flash {
-            padding: 1rem 1.5rem;
-            border-radius: 8px;
-            margin-bottom: 0.5rem;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            animation: slideIn 0.3s ease;
-        }
-
-        .flash.info {
-            background: rgba(99, 102, 241, 0.1);
-            border-left: 4px solid var(--primary);
-        }
-
-        .flash.success {
-            background: rgba(16, 185, 129, 0.1);
-            border-left: 4px solid var(--accent);
-        }
-
-        .flash.error {
-            background: rgba(239, 68, 68, 0.1);
-            border-left: 4px solid var(--danger);
-        }
-
-        .flash.warning {
-            background: rgba(245, 158, 11, 0.1);
-            border-left: 4px solid var(--warning);
-        }
-
-        /* Tables & Lists */
-        .table-responsive {
-            overflow-x: auto;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 1rem;
-        }
-
-        th,
-        td {
-            padding: 1rem;
-            text-align: left;
-            border-bottom: 1px solid var(--border);
-        }
-
-        th {
-            font-weight: 600;
-            color: var(--text-muted);
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        tr:hover td {
-            background: rgba(255, 255, 255, 0.02);
-        }
-
-        .hash-text {
-            font-family: monospace;
-            font-size: 0.85rem;
-            color: var(--primary);
-            word-break: break-all;
-            background: rgba(0, 0, 0, 0.3);
-            padding: 0.2rem 0.5rem;
-            border-radius: 4px;
-        }
-
-        /* Utilities */
-        .flex-between {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .grid-2 {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 1.5rem;
-        }
-
-        .grid-3 {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 1.5rem;
-        }
-
-        .grid-4 {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 1.5rem;
-        }
-
-        .mt-1 {
-            margin-top: 1rem;
-        }
-
-        .mt-2 {
-            margin-top: 2rem;
-        }
-
-        .mb-2 {
-            margin-bottom: 2rem;
-        }
-
-        .text-center {
-            text-align: center;
-        }
-
-        .gap-2 {
-            gap: 0.5rem;
-        }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* Footer */
-        footer {
-            text-align: center;
-            padding: 2rem;
-            color: var(--text-muted);
-            border-top: 1px solid var(--border);
-            margin-top: auto;
-            font-size: 0.9rem;
-        }
-    </style>
+    <title>E-Voting Secure Portal</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
-
 <body>
-    <nav>
-        <a href="/" class="nav-brand">Nexus Vote</a>
+
+    <nav class="navbar">
+        <a href="/" class="navbar-brand">
+            <i class="fa-solid fa-fingerprint"></i> SecureVote
+        </a>
         <div class="nav-links">
-            <a href="/">Dashboard</a>
-            <a href="/register">Registration</a>
-            <a href="/vote">Cast Vote</a>
-            <a href="/bulletin_board">Bulletin Board</a>
-            <a href="/admin">Control Panel (Admin)</a>
+            {% if session.get('role') == 'admin' %}
+                <span class="badge badge-primary"><i class="fa-solid fa-shield-halved"></i> Admin</span>
+                <a href="/admin" class="btn btn-secondary"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
+                <a href="/logout" class="btn btn-danger"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+            {% elif session.get('role') == 'voter' %}
+                <span class="badge badge-success"><i class="fa-solid fa-user-check"></i> Voter: {{ session.get('voter_name', session.get('voter_id')) }}</span>
+                <a href="/logout" class="btn btn-secondary"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+            {% else %}
+                <a href="/bulletin_board" class="btn btn-secondary"><i class="fa-solid fa-list-check"></i> Public Ledger</a>
+                <a href="/login" class="btn btn-primary"><i class="fa-solid fa-right-to-bracket"></i> Login</a>
+            {% endif %}
         </div>
     </nav>
 
-    <div class="container">
-        <!-- Flash messages block -->
+    <main class="container">
         {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-        <div class="flash-container">
-            {% for category, message in messages %}
-            <div class="flash {{ category }}">
-                <span>{{ message }}</span>
-            </div>
-            {% endfor %}
-        </div>
-        {% endif %}
+            {% if messages %}
+                <div class="flash-messages animate-fade-in">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">
+                            {% if category == 'error' %}
+                                <i class="fa-solid fa-circle-exclamation"></i>
+                            {% elif category == 'success' %}
+                                <i class="fa-solid fa-circle-check"></i>
+                            {% else %}
+                                <i class="fa-solid fa-circle-info"></i>
+                            {% endif %}
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
         {% endwith %}
 
-        <!-- Main Content -->
         {% block content %}{% endblock %}
+    </main>
+
+    <!-- Global Loading Overlay -->
+    <div id="globalLoader" class="loading-overlay">
+        <div class="spinner"></div>
+        <div class="loading-text" id="loaderText">Processing...</div>
     </div>
 
-    <footer>
-        <p>&copy; 2026 E-Voting System Demo — Advanced Cryptography (Midterm Project)</p>
-    </footer>
+    <script>
+        function showLoader(text = "Processing...") {
+            document.getElementById('loaderText').innerText = text;
+            document.getElementById('globalLoader').classList.add('active');
+        }
+        function hideLoader() {
+            document.getElementById('globalLoader').classList.remove('active');
+        }
+    </script>
+    
+    {% block scripts %}{% endblock %}
 </body>
-
 </html>

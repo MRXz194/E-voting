@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card glass animate-fade-in" style="max-width: 400px; margin: 4rem auto;">
+    <div class="card-header text-center">
+        <h2 class="card-title text-gradient">Welcome</h2>
+        <p class="text-muted">Sign in to continue</p>
+    </div>
+
+    <!-- Toggle Admin / Voter -->
+    <div class="tabs" style="justify-content: center;">
+        <button class="tab-btn active" onclick="switchTab('voter')">Voter</button>
+        <button class="tab-btn" onclick="switchTab('admin')">Admin</button>
+    </div>
+
+    <!-- Voter Login Form -->
+    <form id="voter-form" action="/login" method="POST" class="tab-content active">
+        <input type="hidden" name="role" value="voter">
+        <div class="form-group">
+            <label class="form-label">Voter ID</label>
+            <input type="text" name="voter_id" class="form-control" placeholder="Enter your Voter ID" required>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Secret Code</label>
+            <input type="password" name="secret_code" class="form-control" placeholder="Enter 6-digit code" required>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">
+            <i class="fa-solid fa-right-to-bracket"></i> Login as Voter
+        </button>
+    </form>
+
+    <!-- Admin Login Form -->
+    <form id="admin-form" action="/login" method="POST" class="tab-content">
+        <input type="hidden" name="role" value="admin">
+        <div class="form-group">
+            <label class="form-label">Username</label>
+            <input type="text" name="username" class="form-control" placeholder="Admin username" required>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Password</label>
+            <input type="password" name="password" class="form-control" placeholder="Admin password" required>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block" style="background: var(--secondary);">
+            <i class="fa-solid fa-shield"></i> Login as Admin
+        </button>
+    </form>
+</div>
+
+<script>
+function switchTab(role) {
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+    
+    if(role === 'voter') {
+        document.querySelector('.tabs button:nth-child(1)').classList.add('active');
+        document.getElementById('voter-form').classList.add('active');
+    } else {
+        document.querySelector('.tabs button:nth-child(2)').classList.add('active');
+        document.getElementById('admin-form').classList.add('active');
+    }
+}
+</script>
+{% endblock %}

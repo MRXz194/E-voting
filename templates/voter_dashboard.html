@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card glass animate-fade-in" style="max-width: 600px; margin: 2rem auto;">
+    
+    {% if voter.status == 'voted' %}
+        <!-- ALREADY VOTED STATE -->
+        <div class="text-center" style="padding: 2rem 0;">
+            <div style="font-size: 4rem; color: var(--success); margin-bottom: 1rem;">
+                <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <h2 class="text-gradient">Vote Submitted Successfully</h2>
+            <p class="text-muted" style="margin-bottom: 2rem;">Your vote has been securely encrypted and added to the bulletin board.</p>
+            <a href="/bulletin_board" class="btn btn-secondary"><i class="fa-solid fa-list-check"></i> View Public Ledger</a>
+        </div>
+    {% elif cfg.status != 'voting' %}
+        <!-- NOT OPEN STATE -->
+        <div class="text-center" style="padding: 2rem 0;">
+            <div style="font-size: 4rem; color: var(--warning); margin-bottom: 1rem;">
+                <i class="fa-solid fa-clock"></i>
+            </div>
+            <h2 class="text-gradient">Voting is currently {{ cfg.status }}</h2>
+            <p class="text-muted">Please wait for the election authority to open the ballot box.</p>
+        </div>
+    {% else %}
+        <!-- VOTING FLOW -->
+        <div id="voting-wizard">
+            <div class="card-header text-center" style="border-bottom: none;">
+                <h2 class="card-title text-gradient">Cast Your Vote</h2>
+                <p class="text-muted">Select your preferred candidate. Your identity is completely protected.</p>
+            </div>
+
+            <div class="grid" style="grid-template-columns: 1fr; gap: 1rem; margin-bottom: 2rem;">
+                {% for cand in candidates %}
+                    <div class="candidate-card" onclick="selectCandidate({{ loop.index0 }}, this)">
+                        <div class="candidate-avatar">{{ cand[0] }}</div>
+                        <div style="font-size: 1.2rem; font-weight: 500;">{{ cand }}</div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <input type="hidden" id="selected-index" value="-1">
+            <button id="submit-btn" class="btn btn-primary btn-block" style="padding: 1rem; font-size: 1.1rem; opacity: 0.5; pointer-events: none;" onclick="processVote()">
+                <i class="fa-solid fa-paper-plane"></i> Secure & Submit Vote
+            </button>
+        </div>
+
+        <div id="success-state" class="text-center" style="display: none; padding: 2rem 0;">
+            <div style="font-size: 4rem; color: var(--success); margin-bottom: 1rem;">
+                <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <h2 class="text-gradient">Vote Secured!</h2>
+            <p class="text-muted">Your vote has been cast. Here is your tracking receipt (save this if you want to verify your vote later).</p>
+            <div style="background: rgba(0,0,0,0.3); padding: 1rem; border-radius: 8px; font-family: monospace; word-break: break-all; margin: 1.5rem 0; color: var(--success);">
+                <span id="receipt-text"></span>
+            </div>
+            <a href="/bulletin_board" class="btn btn-secondary"><i class="fa-solid fa-list-check"></i> Go to Public Ledger</a>
+        </div>
+    {% endif %}
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='crypto.js') }}"></script>
+<script>
+    // Constants for the JS logic
+    const VOTER_ID = "{{ session.get('voter_id') }}";
+    const SECRET_CODE = "{{ voter.secret_code }}"; // Ideally fetched securely or kept in session
+    const NUM_CANDIDATES = {{ candidates|length if candidates else 0 }};
+
+    function selectCandidate(index, el) {
+        document.querySelectorAll('.candidate-card').forEach(card => card.classList.remove('selected'));
+        el.classList.add('selected');
+        document.getElementById('selected-index').value = index;
+        
+        const btn = document.getElementById('submit-btn');
+        btn.style.opacity = '1';
+        btn.style.pointerEvents = 'all';
+    }
+
+    async function processVote() {
+        const choiceIdx = parseInt(document.getElementById('selected-index').value);
+        if (choiceIdx < 0) return;
+
+        try {
+            // STEP 1: Blind Signature Registration
+            showLoader("Step 1/2: Authenticating Anonymously...");
+            
+            const keysRes = await fetch("/api/public-keys");
+            const keys = await keysRes.json();
+            if(keys.error) throw new Error(keys.error);
+            
+            const rsaN = BigInt(keys.rsa.N);
+            const rsaE = BigInt(keys.rsa.e);
+            
+            const tokenStr = "voter_token_" + Math.random().toString(36).substring(2);
+            const { blinded, r } = await CryptoUtils.blindToken(tokenStr, rsaN, rsaE);
+
+            const regRes = await fetch("/api/register/sync", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({
+                    voter_id: VOTER_ID,
+                    secret_code: SECRET_CODE,
+                    blinded_token: blinded
+                })
+            });
+            const regData = await regRes.json();
+            if(regData.error) throw new Error(regData.error);
+
+            const blindSig = BigInt(regData.blind_signature);
+            const credential = CryptoUtils.unblindSignature(blindSig, r, rsaN);
+
+            // STEP 2: ElGamal Encryption
+            showLoader("Step 2/2: Encrypting your vote securely...");
+            
+            const egP = BigInt(keys.elgamal.p);
+            const egG = BigInt(keys.elgamal.g);
+            const egY = BigInt(keys.elgamal.y);
+
+            const c1_array = [];
+            const c2_array = [];
+            for(let i=0; i<NUM_CANDIDATES; i++){
+                const voteBit = (i === choiceIdx) ? 1n : 0n;
+                const ct = CryptoUtils.elGamalEncrypt(voteBit, egP, egG, egY);
+                c1_array.push(ct.c1);
+                c2_array.push(ct.c2);
+            }
+
+            const c1_json = JSON.stringify(c1_array);
+            const c2_json = JSON.stringify(c2_array);
+            const packetHmac = await CryptoUtils.computeHMAC(tokenStr, credential, c1_json, c2_json);
+
+            // STEP 3: Submit
+            showLoader("Submitting to blockchain ledger...");
+            
+            const voteRes = await fetch("/api/vote", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({
+                    token: tokenStr,
+                    credential: credential.toString(),
+                    c1_array: c1_json,
+                    c2_array: c2_json,
+                    packet_hmac: packetHmac,
+                    voter_id_for_ui: VOTER_ID
+                })
+            });
+            const voteData = await voteRes.json();
+            if(voteData.error) throw new Error(voteData.error);
+
+            // Success
+            hideLoader();
+            document.getElementById('voting-wizard').style.display = 'none';
+            document.getElementById('success-state').style.display = 'block';
+            document.getElementById('receipt-text').innerText = voteData.receipt;
+            
+        } catch (error) {
+            hideLoader();
+            Swal.fire('Error', error.message, 'error');
+        }
+    }
+</script>
+{% endblock %}

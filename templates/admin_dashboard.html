@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="grid" style="grid-template-columns: 1fr; gap: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <div>
+            <h2 class="text-gradient">Admin Dashboard</h2>
+            <p class="text-muted">Manage the election lifecycle</p>
+        </div>
+        <div>
+            {% if cfg %}
+                <span class="badge {% if cfg.status == 'setup' %}badge-warning{% elif cfg.status == 'voting' %}badge-success{% else %}badge-primary{% endif %}" style="font-size: 1rem; padding: 0.5rem 1rem;">
+                    Status: {{ cfg.status | upper }}
+                </span>
+            {% else %}
+                <span class="badge badge-warning" style="font-size: 1rem; padding: 0.5rem 1rem;">Status: PENDING SETUP</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card glass">
+        <div class="tabs" style="justify-content: center;">
+            <button class="tab-btn {% if not cfg or cfg.status == 'setup' %}active{% endif %}" onclick="switchAdminTab('setup')">1. Setup Election</button>
+            <button class="tab-btn {% if cfg and cfg.status == 'voting' %}active{% endif %}" onclick="switchAdminTab('voters')" {% if not cfg %}disabled{% endif %}>2. Manage Voters</button>
+            <button class="tab-btn {% if cfg and cfg.status == 'tallying' %}active{% endif %}" onclick="switchAdminTab('tally')" {% if not cfg %}disabled{% endif %}>3. Tally & Results</button>
+        </div>
+
+        <!-- Setup Tab -->
+        <div id="tab-setup" class="tab-content {% if not cfg or cfg.status == 'setup' %}active{% endif %}">
+            <h3 style="margin-bottom: 1.5rem;"><i class="fa-solid fa-gears"></i> Initialize Election</h3>
+            {% if cfg %}
+                <div class="alert alert-warning">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    Warning: Running setup again will ERASE all current voters and ballots!
+                </div>
+            {% endif %}
+            <form action="/admin" method="POST" onsubmit="showLoader('Generating ElGamal & RSA Keys...')">
+                <div class="form-group">
+                    <label class="form-label">Election Name</label>
+                    <input type="text" name="election_name" class="form-control" value="{{ cfg.election_name if cfg else 'Election 2026' }}" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Candidates (comma separated)</label>
+                    <input type="text" name="candidates_str" class="form-control" value="{{ ', '.join(candidates) if candidates else 'Alice, Bob' }}" required>
+                </div>
+                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-play"></i> Initialize System</button>
+            </form>
+        </div>
+
+        <!-- Voters Tab -->
+        <div id="tab-voters" class="tab-content {% if cfg and cfg.status == 'voting' %}active{% endif %}">
+            <h3 style="margin-bottom: 1.5rem;"><i class="fa-solid fa-users-gear"></i> Voter Registry</h3>
+            
+            <div style="display: flex; gap: 1rem; margin-bottom: 2rem;">
+                <form action="/admin/add-voter" method="POST" style="flex: 1; display: flex; gap: 1rem;">
+                    <input type="text" name="voter_id" class="form-control" placeholder="Voter ID" required>
+                    <input type="text" name="name" class="form-control" placeholder="Full Name" required>
+                    <button type="submit" class="btn btn-primary" style="white-space: nowrap;"><i class="fa-solid fa-user-plus"></i> Add</button>
+                </form>
+                <form action="/admin/add-bulk-voters" method="POST">
+                    <button type="submit" class="btn btn-secondary"><i class="fa-solid fa-users"></i> Add 10 Demos</button>
+                </form>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Voter ID</th>
+                            <th>Name</th>
+                            <th>Secret Code</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for v in voters %}
+                        <tr>
+                            <td>{{ v.voter_id }}</td>
+                            <td>{{ v.name }}</td>
+                            <td><code style="background: rgba(0,0,0,0.3); padding: 0.2rem 0.5rem; border-radius: 4px;">{{ v.secret_code }}</code></td>
+                            <td>
+                                {% if v.status == 'voted' %}
+                                    <span class="badge badge-success">Voted</span>
+                                {% elif v.status == 'credential_issued' %}
+                                    <span class="badge badge-warning">Credentialed</span>
+                                {% else %}
+                                    <span class="badge badge-primary">Registered</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% if not voters %}
+                        <tr><td colspan="4" class="text-center text-muted">No voters registered.</td></tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 1rem;">
+                {% if cfg and cfg.status == 'setup' %}
+                    <form action="/admin/open-voting" method="POST">
+                        <button type="submit" class="btn btn-success" style="background: var(--success); color: white;"><i class="fa-solid fa-lock-open"></i> Open Voting</button>
+                    </form>
+                {% elif cfg and cfg.status == 'voting' %}
+                    <form action="/admin/close-voting" method="POST">
+                        <button type="submit" class="btn btn-danger"><i class="fa-solid fa-lock"></i> Close Voting & Tally</button>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Tally Tab -->
+        <div id="tab-tally" class="tab-content {% if cfg and cfg.status == 'tallying' %}active{% endif %}">
+            <h3 style="margin-bottom: 1.5rem;"><i class="fa-solid fa-chart-pie"></i> Homomorphic Tally Results</h3>
+            
+            {% if cfg and cfg.status == 'tallying' %}
+                <div class="grid grid-cols-2" style="margin-bottom: 2rem;">
+                    <div class="card glass" style="background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.3);">
+                        <h4 class="text-muted" style="margin-bottom: 0.5rem;">Winner</h4>
+                        <h2 style="color: #6ee7b7; font-size: 2.5rem; margin-bottom: 0;">{{ winner.candidate if winner else 'N/A' }}</h2>
+                    </div>
+                    <div class="card glass">
+                        <h4 class="text-muted" style="margin-bottom: 0.5rem;">Total Ballots Verified</h4>
+                        <h2 style="font-size: 2.5rem; margin-bottom: 0;">{{ total_count }}</h2>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Candidate</th>
+                                <th>Votes</th>
+                                <th>Percentage</th>
+                                <th>Bar</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for r in results %}
+                            <tr>
+                                <td style="font-weight: 600;">{{ r.candidate }}</td>
+                                <td>{{ r.votes }}</td>
+                                <td>{{ r.pct }}%</td>
+                                <td style="width: 40%;">
+                                    <div style="width: 100%; background: rgba(255,255,255,0.1); height: 8px; border-radius: 4px; overflow: hidden;">
+                                        <div style="width: {{ r.pct }}%; background: var(--primary); height: 100%; border-radius: 4px;"></div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center text-muted" style="padding: 3rem 0;">
+                    <i class="fa-solid fa-lock" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                    <h4>Tallying is Locked</h4>
+                    <p>The homomorphic tally process can only run after the election authority closes the voting phase.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function switchAdminTab(tabId) {
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+    
+    event.currentTarget.classList.add('active');
+    document.getElementById('tab-' + tabId).classList.add('active');
+}
+</script>
+{% endblock %}
