@@ -1,152 +1,50 @@
 {% extends "base.html" %}
-
+{% block title %}SecureVote — Cast Vote{% endblock %}
+{% block body_class %}flex items-center justify-center min-h-screen{% endblock %}
 {% block content %}
-<div class="card" style="max-width: 700px; margin: 0 auto;">
-    <div class="text-center mb-2">
-        <h2>Bỏ Phiếu Kín (Voting Phase)</h2>
-        <p>Mã hóa ElGamal Cryptosystem</p>
-    </div>
-
-    <div class="grid-2 mb-2">
-        <div
-            style="background: rgba(16, 185, 129, 0.1); padding: 1.5rem; border-radius: 8px; border-top: 4px solid var(--accent);">
-            <h4 style="color: #34d399; margin-bottom: 0.5rem;">Bảo Mật Nội Dung</h4>
-            <p style="font-size: 0.85rem;" class="text-muted">Phiếu bầu của bạn sẽ được encode thành \( g^{vote} \pmod p
-                \) trước khi mã hóa thuật toán ElGamal. Giá trị randomness \( k \) đảm bảo bầu cùng 1 người 2 lần ra mã
-                khác nhau.</p>
+<main class="w-full max-w-[600px] mx-auto p-margin">
+    <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-[0_4px_6px_-1px_rgb(0_0_0/0.05)] overflow-hidden">
+        <div class="p-lg border-b border-outline-variant bg-surface-container-low flex items-center gap-sm">
+            <span class="material-symbols-outlined text-primary">how_to_vote</span>
+            <h2 class="text-h2 font-semibold text-on-surface">Cast Your Vote</h2>
+            <span class="ml-auto text-[11px] font-mono text-on-surface-variant bg-surface-container px-2 py-0.5 rounded border border-outline-variant">ElGamal Encryption</span>
         </div>
-        <div
-            style="background: rgba(245, 158, 11, 0.1); padding: 1.5rem; border-radius: 8px; border-top: 4px solid var(--warning);">
-            <h4 style="color: #fbbf24; margin-bottom: 0.5rem;">Bảo Mật Đường Truyền</h4>
-            <p style="font-size: 0.85rem;" class="text-muted">Gói tin sẽ được tính mã MAC nguyên vẹn bằng hàm băm
-                HMAC-SHA256(Credential, Payload). Server chặn mọi sự can thiệp Man-in-the-Middle.</p>
-        </div>
-    </div>
-
-    <div id="vote-form">
-        <div class="form-group">
-            <label style="font-size: 1.2rem; color: white;">Vui lòng chọn 1 ứng cử viên:</label>
-            <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem;">
+        <div class="p-xl space-y-lg">
+            <div class="space-y-sm">
                 {% for cand in candidates %}
-                <label
-                    style="background: rgba(0,0,0,0.3); padding: 1.5rem; border-radius: 8px; border: 1px solid var(--border); display: flex; align-items: center; gap: 1rem; cursor: pointer; transition: all 0.2s;">
-                    <input type="radio" name="candidate_idx" value="{{ loop.index0 }}" data-name="{{ cand }}" required
-                        style="width: 24px; height: 24px; accent-color: var(--primary);">
-                    <span style="font-size: 1.1rem; font-weight: 500;">{{ cand }}</span>
+                <label class="flex items-center gap-lg p-md bg-surface-container-low border-2 border-transparent rounded-xl cursor-pointer hover:border-primary/30 transition-all">
+                    <input type="radio" name="candidate_idx" value="{{ loop.index0 }}" data-name="{{ cand }}" required class="w-5 h-5 accent-primary">
+                    <div class="flex items-center gap-md flex-1"><div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center"><span class="material-symbols-outlined text-outline">person</span></div><span class="text-[14px] font-semibold text-on-surface">{{ cand }}</span></div>
                 </label>
                 {% endfor %}
             </div>
+            <button onclick="performVoting()" class="w-full bg-primary text-on-primary text-[13px] font-semibold py-3 rounded-lg flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors border-b-[3px] border-primary-fixed-dim"><span class="material-symbols-outlined text-[18px]">enhanced_encryption</span>Encrypt & Submit</button>
+            <div id="status-console" class="hidden bg-inverse-surface text-inverse-on-surface rounded-xl p-md font-mono text-[11px] break-all"></div>
         </div>
-
-        <button onclick="performVoting()" class="btn btn-primary mt-2"
-            style="width: 100%; font-size: 1.2rem; padding: 1rem;">
-            Mã Hóa ElGamal & Gửi Phiếu Cho BB
-        </button>
     </div>
-
-    <div id="status-console" class="mt-4"
-        style="display: none; background: rgba(0,0,0,0.4); padding: 1rem; border-radius: 8px; font-family: monospace; font-size: 0.85rem; color: #a5b4fc; word-break: break-all;">
-    </div>
-</div>
-
+</main>
+{% endblock %}
+{% block scripts %}
 <script src="{{ url_for('static', filename='crypto.js') }}"></script>
 <script>
-    const numCandidates = {{ candidates| length }};
-
-    async function performVoting() {
-        const selected = document.querySelector('input[name="candidate_idx"]:checked');
-        if (!selected) return alert("Vui lòng chọn 1 ứng cử viên!");
-
-        const candidateIdx = parseInt(selected.value);
-        const candidateName = selected.getAttribute('data-name');
-
-        const consoleDiv = document.getElementById('status-console');
-        consoleDiv.style.display = 'block';
-
-        // Đọc Credential từ SessionStorage
-        const voterId = sessionStorage.getItem("voter_id");
-        const token = sessionStorage.getItem("voter_token");
-        const credential = sessionStorage.getItem("voter_credential");
-
-        if (!token || !credential) {
-            alert("Không tìm thấy Credential! Bạn cần đăng ký khóa trước.");
-            window.location.href = '/register';
-            return;
-        }
-
-        try {
-            consoleDiv.innerHTML = '> Lấy ElGamal Public Key từ Server...<br>';
-            const res = await fetch('/api/public-keys');
-            const keys = await res.json();
-
-            const p = BigInt(keys.elgamal.p);
-            const g = BigInt(keys.elgamal.g);
-            const y = BigInt(keys.elgamal.y);
-
-            consoleDiv.innerHTML += '> Đang mã hóa mảng phiếu bằng ElGamal Homomorphic...<br>';
-
-            let c1_arr = [];
-            let c2_arr = [];
-
-            // Zero-Knowledge Array Creation
-            for (let i = 0; i < numCandidates; i++) {
-                const voteBit = (i === candidateIdx) ? 1n : 0n;
-                const ct = CryptoUtils.elGamalEncrypt(voteBit, p, g, y);
-                c1_arr.push(ct.c1.toString());
-                c2_arr.push(ct.c2.toString());
-            }
-
-            const c1Json = JSON.stringify(c1_arr);
-            const c2Json = JSON.stringify(c2_arr);
-            consoleDiv.innerHTML += `> Ciphertext Array: Đã sinh ${numCandidates} khối cipher.<br>`;
-
-            consoleDiv.innerHTML += '> Đang tính toán chữ ký số HMAC-SHA256 bảo vệ gói tin...<br>';
-            const hmac = await CryptoUtils.computeHMAC(token, credential, c1Json, c2Json);
-            consoleDiv.innerHTML += `> HMAC Packet: ${hmac}<br>`;
-
-            consoleDiv.innerHTML += '> Đẩy gói tin qua mạng HTTP tới Bulletin Board...<br>';
-
-            const voteRes = await fetch('/api/vote', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    voter_id_for_ui: voterId,
-                    token: token,
-                    credential: credential,
-                    c1_array: c1Json,
-                    c2_array: c2Json,
-                    packet_hmac: hmac
-                })
-            });
-
-            const voteData = await voteRes.json();
-            if (voteData.error) throw new Error(voteData.error);
-
-            // Xóa Session Storage sau khi vote thành công để mô phỏng "dùng 1 lần"
-            sessionStorage.clear();
-
-            consoleDiv.innerHTML += `<span style="color: #34d399">> THÀNH CÔNG! Server Bulletin Board đã xác minh HMAC và lưu mảng Ciphertext.</span><br>`;
-
-            // Redirect to local receipt page (passing data via URL encoded)
-            setTimeout(() => {
-                window.location.href = `/receipt?r=${voteData.receipt}&c=${encodeURIComponent(candidateName)}`;
-            }, 2000);
-
-        } catch (err) {
-            consoleDiv.innerHTML += `<span style="color: #ef4444">> LỖI: ${err.message}</span><br>`;
-        }
-    }
+var numCandidates={{ candidates|length }};
+async function performVoting(){
+    var sel=document.querySelector('input[name="candidate_idx"]:checked');if(!sel)return alert("Select a candidate");
+    var ci=parseInt(sel.value),cn=sel.dataset.name,c=document.getElementById('status-console');c.classList.remove('hidden');
+    var vid=sessionStorage.getItem("voter_id"),tok=sessionStorage.getItem("voter_token"),cred=sessionStorage.getItem("voter_credential");
+    if(!tok||!cred){alert("No credential. Register first.");window.location.href='/register';return;}
+    try{c.innerHTML='> Fetching keys...<br>';var r=await fetch('/api/public-keys');var k=await r.json();
+    var p=BigInt(k.elgamal.p),g=BigInt(k.elgamal.g),y=BigInt(k.elgamal.y);
+    c.innerHTML+='> Encrypting...<br>';var c1a=[],c2a=[];
+    for(var i=0;i<numCandidates;i++){var vb=(i===ci)?1n:0n;var ct=CryptoUtils.elGamalEncrypt(vb,p,g,y);c1a.push(ct.c1.toString());c2a.push(ct.c2.toString());}
+    var c1j=JSON.stringify(c1a),c2j=JSON.stringify(c2a);
+    var hmac=await CryptoUtils.computeHMAC(tok,cred,c1j,c2j);
+    c.innerHTML+='> Submitting...<br>';
+    var vr=await fetch('/api/vote',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({voter_id_for_ui:vid,token:tok,credential:cred,c1_array:c1j,c2_array:c2j,packet_hmac:hmac})});
+    var vd=await vr.json();if(vd.error)throw new Error(vd.error);sessionStorage.clear();
+    c.innerHTML+='<span class="text-secondary-fixed">> SUCCESS!</span><br>';
+    setTimeout(function(){window.location.href='/receipt?r='+vd.receipt+'&c='+encodeURIComponent(cn);},1500);
+    }catch(e){c.innerHTML+='<span class="text-error">> ERROR: '+e.message+'</span><br>';}
+}
 </script>
-</div>
-
-<style>
-    label:hover {
-        border-color: var(--primary) !important;
-        background: rgba(99, 102, 241, 0.05) !important;
-    }
-
-    input[type="radio"]:checked+span {
-        color: var(--primary);
-    }
-</style>
 {% endblock %}

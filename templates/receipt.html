@@ -1,34 +1,20 @@
 {% extends "base.html" %}
-
+{% block title %}SecureVote — Receipt{% endblock %}
+{% block body_class %}flex items-center justify-center min-h-screen{% endblock %}
 {% block content %}
-<div class="card"
-    style="max-width: 600px; margin: 2rem auto; text-align: center; background: linear-gradient(145deg, rgba(16, 185, 129, 0.1), transparent);">
-
-    <div
-        style="background: rgba(16, 185, 129, 0.2); width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
-        <svg fill="none" stroke="#34d399" stroke-width="2" viewBox="0 0 24 24" style="width: 40px; height: 40px;">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path>
-        </svg>
-    </div>
-
-    <h2 style="color: #34d399; margin-bottom: 0.5rem;">Cảm ơn bạn đã bỏ phiếu!</h2>
-    <p>Phiếu của bạn đã được mã hóa, gói tin hợp lệ và lưu vào Bulletin Board.</p>
-
-    <div
-        style="background: rgba(0,0,0,0.3); padding: 1.5rem; border-radius: 8px; border: 1px solid var(--border); margin: 2rem 0; text-align: left;">
-        <p style="margin-bottom: 0.5rem; color: #a5b4fc; font-weight: 500;">Biên nhận (Receipt Tracker):</p>
-        <div class="hash-text" style="font-size: 1.1rem; padding: 1rem;">
-            {{ receipt }}
+<main class="w-full max-w-[500px] mx-auto p-margin">
+    <div class="bg-secondary-container/30 rounded-2xl border border-secondary/20 p-xl text-center">
+        <span class="material-symbols-outlined text-secondary text-[56px] mb-md block icon-fill">task_alt</span>
+        <h2 class="text-h1 text-on-surface mb-sm">Vote Successfully Cast!</h2>
+        <p class="text-body text-on-surface-variant mb-lg">Your ballot for <strong>{{ chosen }}</strong> has been encrypted and submitted.</p>
+        <div class="bg-inverse-surface text-inverse-on-surface rounded-xl p-md mb-lg text-left">
+            <p class="text-label text-primary-fixed-dim mb-1 uppercase">Receipt Hash</p>
+            <p class="font-mono text-[12px] break-all">{{ receipt }}</p>
         </div>
-        <p style="font-size: 0.85rem; margin-top: 1rem;" class="text-muted">
-            Hãy sao chép Receipt trên. Bạn có thể dùng nó để kiểm tra công khai trên hệ thống xem phiếu của mình đã nằm
-            trong hòm phiếu hay chưa. Nội dung ({{ chosen }}) hoàn toàn được ẩn.
-        </p>
+        <div class="flex gap-sm justify-center">
+            <a href="{{ url_for('bulletin_board') }}" class="bg-primary text-on-primary px-lg py-2.5 rounded-lg text-[13px] font-semibold flex items-center gap-1.5 hover:bg-primary/90 transition-colors"><span class="material-symbols-outlined text-[16px]">list_alt</span>View Ledger</a>
+            <a href="{{ url_for('index') }}" class="bg-surface-container-lowest text-on-surface px-lg py-2.5 rounded-lg text-[13px] font-semibold border border-outline-variant hover:bg-surface-container-low transition-colors">Home</a>
+        </div>
     </div>
-
-    <div style="display: flex; gap: 1rem; justify-content: center;">
-        <a href="/" class="btn btn-primary">Về Trang Chủ</a>
-        <a href="/bulletin_board" class="btn btn-outline">Xem Bảng Tin</a>
-    </div>
-</div>
+</main>
 {% endblock %}

@@ -1,453 +1,143 @@
 <!DOCTYPE html>
-<html lang="vi">
-
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>E-Voting 2026 — Crypto System</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>{% block title %}SecureVote{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#3525cd",
+                        "on-primary": "#ffffff",
+                        "primary-container": "#4f46e5",
+                        "on-primary-container": "#dad7ff",
+                        "inverse-primary": "#c3c0ff",
+                        "secondary": "#006c49",
+                        "on-secondary": "#ffffff",
+                        "secondary-container": "#6cf8bb",
+                        "on-secondary-container": "#00714d",
+                        "tertiary": "#3130c0",
+                        "on-tertiary": "#ffffff",
+                        "tertiary-container": "#4b4dd8",
+                        "on-tertiary-container": "#d9d8ff",
+                        "error": "#ba1a1a",
+                        "on-error": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "on-error-container": "#93000a",
+                        "background": "#f8f9ff",
+                        "on-background": "#0b1c30",
+                        "surface": "#f8f9ff",
+                        "on-surface": "#0b1c30",
+                        "on-surface-variant": "#464555",
+                        "surface-variant": "#d3e4fe",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-low": "#eff4ff",
+                        "surface-container": "#e5eeff",
+                        "surface-container-high": "#dce9ff",
+                        "surface-container-highest": "#d3e4fe",
+                        "inverse-surface": "#213145",
+                        "inverse-on-surface": "#eaf1ff",
+                        "outline": "#777587",
+                        "outline-variant": "#c7c4d8",
+                        "surface-tint": "#4d44e3",
+                        "primary-fixed": "#e2dfff",
+                        "primary-fixed-dim": "#c3c0ff",
+                        "secondary-fixed": "#6ffbbe",
+                        "secondary-fixed-dim": "#4edea3",
+                        "tertiary-fixed": "#e1e0ff",
+                        "tertiary-fixed-dim": "#c0c1ff",
+                        "on-primary-fixed": "#0f0069",
+                        "on-secondary-fixed": "#002113",
+                        "on-tertiary-fixed": "#07006c",
+                        "surface-dim": "#cbdbf5",
+                        "surface-bright": "#f8f9ff",
+                    },
+                    borderRadius: { DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", "2xl": "1rem", "3xl": "1.5rem", full: "9999px" },
+                    spacing: { unit: "4px", xs: "4px", sm: "8px", md: "16px", lg: "24px", xl: "40px", "2xl": "64px", gutter: "24px", margin: "32px" },
+                    fontFamily: {
+                        sans: ["Plus Jakarta Sans", "sans-serif"],
+                        mono: ["JetBrains Mono", "monospace"],
+                    },
+                    fontSize: {
+                        "h1": ["30px", { lineHeight: "38px", fontWeight: "700" }],
+                        "h2": ["18px", { lineHeight: "28px", fontWeight: "500" }],
+                        "body": ["14px", { lineHeight: "20px", fontWeight: "400" }],
+                        "label": ["12px", { lineHeight: "16px", fontWeight: "600", letterSpacing: "0.05em" }],
+                        "technical": ["13px", { lineHeight: "18px", fontWeight: "400" }],
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-        :root {
-            --bg-color: #0b0f19;
-            --surface: rgba(26, 32, 53, 0.7);
-            --surface-hover: rgba(45, 55, 72, 0.9);
-            --border: rgba(255, 255, 255, 0.1);
-            --primary: #6366f1;
-            --primary-glow: rgba(99, 102, 241, 0.4);
-            --secondary: #8b5cf6;
-            --accent: #10b981;
-            --danger: #ef4444;
-            --warning: #f59e0b;
-            --text: #f3f4f6;
-            --text-muted: #9ca3af;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Outfit', sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            background-image:
-                radial-gradient(circle at 15% 50%, rgba(99, 102, 241, 0.15), transparent 25%),
-                radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.15), transparent 25%);
-            background-attachment: fixed;
-            overflow-x: hidden;
-        }
-
-        /* Navbar */
-        nav {
-            background: rgba(11, 15, 25, 0.8);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border-bottom: 1px solid var(--border);
-            padding: 1rem 2rem;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .nav-brand {
-            font-size: 1.5rem;
-            font-weight: 700;
-            background: linear-gradient(to right, var(--primary), var(--secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-decoration: none;
-            letter-spacing: -0.5px;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 1.5rem;
-        }
-
-        .nav-links a {
-            color: var(--text-muted);
-            text-decoration: none;
-            font-weight: 500;
-            font-size: 0.95rem;
-            transition: all 0.3s ease;
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-        }
-
-        .nav-links a:hover {
-            color: white;
-            background: var(--surface);
-        }
-
-        /* Container & Glassmorphism Cards */
-        .container {
-            max-width: 1200px;
-            margin: 2rem auto;
-            padding: 0 1.5rem;
-            flex: 1;
-            width: 100%;
-        }
-
-        .card {
-            background: var(--surface);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 2rem;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .card:hover {
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
-            border-color: rgba(255, 255, 255, 0.15);
-        }
-
-        /* Typography */
-        h1,
-        h2,
-        h3 {
-            color: white;
-            margin-bottom: 1rem;
-            font-weight: 600;
-        }
-
-        h1 {
-            font-size: 2.5rem;
-            letter-spacing: -1px;
-        }
-
-        h2 {
-            font-size: 1.8rem;
-        }
-
-        p {
-            line-height: 1.6;
-            margin-bottom: 1rem;
-            color: var(--text-muted);
-        }
-
-        /* Badges */
-        .badge {
-            display: inline-block;
-            padding: 0.25rem 0.75rem;
-            border-radius: 9999px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .badge.info {
-            background: rgba(99, 102, 241, 0.1);
-            color: #818cf8;
-            border: 1px solid rgba(99, 102, 241, 0.2);
-        }
-
-        .badge.success {
-            background: rgba(16, 185, 129, 0.1);
-            color: #34d399;
-            border: 1px solid rgba(16, 185, 129, 0.2);
-        }
-
-        .badge.warning {
-            background: rgba(245, 158, 11, 0.1);
-            color: #fbbf24;
-            border: 1px solid rgba(245, 158, 11, 0.2);
-        }
-
-        .status-setup {
-            color: var(--warning);
-        }
-
-        .status-registration {
-            color: var(--primary);
-        }
-
-        .status-voting {
-            color: var(--accent);
-        }
-
-        .status-tallying {
-            color: var(--secondary);
-        }
-
-        .status-done {
-            color: var(--text);
-        }
-
-        /* Form elements */
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-            font-size: 0.95rem;
-            color: var(--text);
-        }
-
-        input[type="text"],
-        input[type="password"],
-        input[type="number"],
-        select,
-        textarea {
-            width: 100%;
-            padding: 0.8rem 1rem;
-            background: rgba(0, 0, 0, 0.2);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: white;
-            font-family: inherit;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-        }
-
-        input:focus,
-        select:focus,
-        textarea:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px var(--primary-glow);
-        }
-
-        /* Buttons */
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            padding: 0.8rem 1.5rem;
-            border: none;
-            border-radius: 8px;
-            font-family: inherit;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            color: white;
-            box-shadow: 0 4px 15px var(--primary-glow);
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px var(--primary-glow);
-        }
-
-        .btn-outline {
-            background: transparent;
-            color: white;
-            border: 1px solid var(--border);
-        }
-
-        .btn-outline:hover {
-            background: var(--surface-hover);
-            border-color: rgba(255, 255, 255, 0.3);
-        }
-
-        .btn-danger {
-            background: rgba(239, 68, 68, 0.1);
-            color: var(--danger);
-            border: 1px solid rgba(239, 68, 68, 0.2);
-        }
-
-        .btn-danger:hover {
-            background: rgba(239, 68, 68, 0.2);
-        }
-
-        /* Flash Messages */
-        .flash-container {
-            margin-bottom: 2rem;
-        }
-
-        .flash {
-            padding: 1rem 1.5rem;
-            border-radius: 8px;
-            margin-bottom: 0.5rem;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            animation: slideIn 0.3s ease;
-        }
-
-        .flash.info {
-            background: rgba(99, 102, 241, 0.1);
-            border-left: 4px solid var(--primary);
-        }
-
-        .flash.success {
-            background: rgba(16, 185, 129, 0.1);
-            border-left: 4px solid var(--accent);
-        }
-
-        .flash.error {
-            background: rgba(239, 68, 68, 0.1);
-            border-left: 4px solid var(--danger);
-        }
-
-        .flash.warning {
-            background: rgba(245, 158, 11, 0.1);
-            border-left: 4px solid var(--warning);
-        }
-
-        /* Tables & Lists */
-        .table-responsive {
-            overflow-x: auto;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 1rem;
-        }
-
-        th,
-        td {
-            padding: 1rem;
-            text-align: left;
-            border-bottom: 1px solid var(--border);
-        }
-
-        th {
-            font-weight: 600;
-            color: var(--text-muted);
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        tr:hover td {
-            background: rgba(255, 255, 255, 0.02);
-        }
-
-        .hash-text {
-            font-family: monospace;
-            font-size: 0.85rem;
-            color: var(--primary);
-            word-break: break-all;
-            background: rgba(0, 0, 0, 0.3);
-            padding: 0.2rem 0.5rem;
-            border-radius: 4px;
-        }
-
-        /* Utilities */
-        .flex-between {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .grid-2 {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 1.5rem;
-        }
-
-        .grid-3 {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 1.5rem;
-        }
-
-        .grid-4 {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 1.5rem;
-        }
-
-        .mt-1 {
-            margin-top: 1rem;
-        }
-
-        .mt-2 {
-            margin-top: 2rem;
-        }
-
-        .mb-2 {
-            margin-bottom: 2rem;
-        }
-
-        .text-center {
-            text-align: center;
-        }
-
-        .gap-2 {
-            gap: 0.5rem;
-        }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* Footer */
-        footer {
-            text-align: center;
-            padding: 2rem;
-            color: var(--text-muted);
-            border-top: 1px solid var(--border);
-            margin-top: auto;
-            font-size: 0.9rem;
-        }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .icon-fill { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        * { scrollbar-width: thin; scrollbar-color: #c7c4d8 transparent; }
     </style>
+    <script>
+    /* Protect Material Symbols from Google Translate */
+    (function(){
+        function fix(){
+            document.querySelectorAll('.material-symbols-outlined').forEach(function(el){
+                if(!el.dataset.i) el.dataset.i=el.textContent.trim();
+                el.setAttribute('translate','no');
+                el.classList.add('notranslate');
+                if(el.dataset.i && el.textContent.trim()!==el.dataset.i) el.textContent=el.dataset.i;
+            });
+        }
+        document.addEventListener('DOMContentLoaded',function(){
+            fix();
+            new MutationObserver(function(m){fix();}).observe(document.body,{childList:true,subtree:true,characterData:true});
+        });
+    })();
+    </script>
+    {% block head %}{% endblock %}
 </head>
+<body class="bg-background text-on-surface text-body antialiased min-h-screen {% block body_class %}{% endblock %}">
 
-<body>
-    <nav>
-        <a href="/" class="nav-brand">Nexus Vote</a>
-        <div class="nav-links">
-            <a href="/">Dashboard</a>
-            <a href="/register">Registration</a>
-            <a href="/vote">Cast Vote</a>
-            <a href="/bulletin_board">Bulletin Board</a>
-            <a href="/admin">Control Panel (Admin)</a>
+    {% block layout %}
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div id="flash-container" class="fixed top-4 right-4 z-[9999] flex flex-col gap-2 max-w-md transition-opacity duration-300">
+        {% for category, message in messages %}
+        <div class="flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg border
+            {% if category == 'error' %}bg-error-container text-on-error-container border-error/20
+            {% elif category == 'success' %}bg-secondary-container text-on-secondary-container border-secondary/20
+            {% else %}bg-surface-container-highest text-on-surface border-outline-variant{% endif %}">
+            <span class="material-symbols-outlined text-[18px] icon-fill">
+                {% if category == 'error' %}error{% elif category == 'success' %}check_circle{% else %}info{% endif %}
+            </span>
+            <span class="text-[13px] font-medium flex-1">{{ message }}</span>
         </div>
-    </nav>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
 
-    <div class="container">
-        <!-- Flash messages block -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-        <div class="flash-container">
-            {% for category, message in messages %}
-            <div class="flash {{ category }}">
-                <span>{{ message }}</span>
-            </div>
-            {% endfor %}
-        </div>
-        {% endif %}
-        {% endwith %}
+    {% block content %}{% endblock %}
+    {% endblock %}
 
-        <!-- Main Content -->
-        {% block content %}{% endblock %}
+    <!-- Global Loader -->
+    <div id="globalLoader" class="fixed inset-0 bg-white/80 backdrop-blur-sm z-[9999] flex flex-col justify-center items-center opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="w-10 h-10 border-[3px] border-surface-container-high border-t-primary rounded-full animate-spin mb-3"></div>
+        <span id="loaderText" class="text-[13px] text-on-surface-variant">Processing...</span>
     </div>
 
-    <footer>
-        <p>&copy; 2026 E-Voting System Demo — Advanced Cryptography (Midterm Project)</p>
-    </footer>
-</body>
+    <script>
+        function showLoader(t){document.getElementById('loaderText').textContent=t||'Processing...';var l=document.getElementById('globalLoader');l.classList.remove('opacity-0','pointer-events-none');l.classList.add('opacity-100');}
+        function hideLoader(){var l=document.getElementById('globalLoader');l.classList.add('opacity-0','pointer-events-none');l.classList.remove('opacity-100');}
+        setTimeout(function(){var c=document.getElementById('flash-container');if(c){c.style.opacity='0';setTimeout(function(){c.remove()},300)}},5000);
+    </script>
 
+    {% block scripts %}{% endblock %}
+</body>
 </html>

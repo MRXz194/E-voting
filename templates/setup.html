@@ -1,33 +1,24 @@
 {% extends "base.html" %}
-
+{% block title %}SecureVote — Setup{% endblock %}
+{% block body_class %}flex items-center justify-center min-h-screen{% endblock %}
 {% block content %}
-<div class="card" style="max-width: 600px; margin: 0 auto;">
-    <h2 class="mb-2">Tái cấu trúc: Setup Bầu Cử Mới (EA)</h2>
-    <p>Election Authority (EA) sẽ sinh cặp khóa ElGamal (mã hóa) và RSA (chữ ký mù).</p>
-
-    <div class="flash warning mb-2">
-        <strong>Lưu ý:</strong> Hành động này sẽ TẠO MỚI toàn bộ data, XÓA sạch cấu hình cũ, cử tri, và thùng phiếu hiện
-        tại. Dùng cho demo.
+<main class="w-full max-w-[500px] mx-auto p-margin">
+    <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-[0_4px_6px_-1px_rgb(0_0_0/0.05)] overflow-hidden">
+        <div class="p-lg border-b border-outline-variant bg-surface-container-low flex items-center gap-sm">
+            <span class="material-symbols-outlined text-primary">settings</span>
+            <h2 class="text-h2 font-semibold text-on-surface">Election Setup</h2>
+        </div>
+        <div class="p-xl space-y-lg">
+            <div class="flex items-start gap-md bg-error-container/50 border border-error/20 rounded-xl p-md">
+                <span class="material-symbols-outlined text-error text-[20px] mt-0.5 shrink-0">warning</span>
+                <p class="text-[13px] text-on-error-container">This will erase all current data and create a new election from scratch.</p>
+            </div>
+            <form action="{{ url_for('setup') }}" method="POST" class="space-y-md">
+                <div><label class="text-label uppercase text-on-surface-variant block mb-1">Election Name</label><input name="election_name" type="text" required value="National Election 2024" class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-md py-2.5 text-[13px] font-mono text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-colors"></div>
+                <div><label class="text-label uppercase text-on-surface-variant block mb-1">Candidates</label><input name="candidates_str" type="text" required value="Alice, Bob, Charlie" class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-md py-2.5 text-[13px] font-mono text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-colors"></div>
+                <button type="submit" class="w-full bg-primary text-on-primary text-[13px] font-semibold py-3 rounded-lg flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors border-b-[3px] border-primary-fixed-dim"><span class="material-symbols-outlined text-[18px]">rocket_launch</span>Initialize & Generate Keys</button>
+            </form>
+        </div>
     </div>
-
-    <form action="/setup" method="POST">
-        <div class="form-group">
-            <label for="election_name">Tên Cuộc Bầu Cử</label>
-            <input type="text" id="election_name" name="election_name" placeholder="VD: Bầu cử Tổng Thống 2026" required
-                value="Bầu cử Giám Đốc EA">
-        </div>
-
-        <div class="form-group">
-            <label for="candidates">Danh Sách Ứng Viên</label>
-            <p style="font-size: 0.85rem;" class="mb-1">Tách nhau bởi dấu phẩy (,). Hệ thống Homomorphic Tally sử dụng
-                Per-Candidate Scheme.</p>
-            <input type="text" id="candidates" name="candidates_str" placeholder="Thí sinh A, Thí sinh B, Thí sinh C"
-                required value="Alice, Bob, Charlie">
-        </div>
-
-        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
-            Khởi Tạo && Sinh Khóa
-        </button>
-    </form>
-</div>
+</main>
 {% endblock %}

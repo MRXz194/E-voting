@@ -37,7 +37,7 @@ def _setup_election_and_get_credential(client, voter_id="voter1", token="secure_
     và trả về (credential, token, c1, c2, hmac) sẵn sàng để bỏ phiếu.
     """
     # 1. Khởi tạo bầu cử
-    client.post("/setup", data={"election_name": "Test Election", "candidates_str": "Alice, Bob"})
+    client.post("/admin", data={"election_name": "Test Election", "candidates_str": "Alice, Bob"})
 
     # 2. Thêm voter và lấy secret_code
     client.post("/admin/add-voter", data={"voter_id": voter_id, "name": "Test Voter"})
@@ -126,7 +126,7 @@ def test_double_voting_same_token_is_blocked(client):
     res2 = client.post("/api/vote", json=vote_payload)
     assert res2.status_code == 409, \
         f"Vote trùng PHẢI trả 409, nhưng nhận được {res2.status_code}: {res2.get_json()}"
-    assert "đã được dùng" in res2.get_json()["error"]
+    assert "already been used" in res2.get_json()["error"]
 
 
 def test_double_voting_1000_attempts_all_blocked(client):
@@ -185,7 +185,7 @@ def test_credential_cannot_be_reused_with_different_token(client):
     # Server phải từ chối vì verify_credential(fake_token, credential, pub) == False
     assert res.status_code == 403, \
         f"Credential không match token phải bị từ chối (403), nhận được {res.status_code}"
-    assert "không hợp lệ" in res.get_json()["error"]
+    assert "Invalid token signature" in res.get_json()["error"]
 
 
 
@@ -214,7 +214,7 @@ def test_double_registration_is_blocked(client):
     })
     assert res.status_code == 400, \
         f"Đăng ký lần 2 phải bị block (400), nhận được {res.status_code}"
-    assert "Credential đã được cấp" in res.get_json()["error"]
+    assert "Credential already issued" in res.get_json()["error"]
 
 
 # TEST 5: FORGED CREDENTIAL — Bỏ phiếu bằng credential tự tạo (không có RA ký)
@@ -223,7 +223,7 @@ def test_forged_credential_is_rejected(client):
     Attacker tự tạo một số nguyên ngẫu nhiên làm credential mà không có RSA signature từ RA.
     Server phải từ chối vì verify_credential thất bại.
     """
-    client.post("/setup", data={"election_name": "Test", "candidates_str": "A, B"})
+    client.post("/admin", data={"election_name": "Test", "candidates_str": "A, B"})
     client.post("/admin/add-voter", data={"voter_id": "voter1", "name": "V1"})
     client.post("/admin/open-voting")
 
@@ -271,7 +271,7 @@ def test_tampered_ciphertexts_rejected_by_hmac(client):
 # TEST 7: WRONG SECRET CODE — Mã bí mật sai không được cấp credential
 def test_wrong_secret_code_blocks_registration(client):
     """Voter nhập sai mã bí mật → RA từ chối ký mù."""
-    client.post("/setup", data={"election_name": "Test", "candidates_str": "A, B"})
+    client.post("/admin", data={"election_name": "Test", "candidates_str": "A, B"})
     client.post("/admin/add-voter", data={"voter_id": "voter1", "name": "V1"})
     client.post("/admin/open-voting")
 
@@ -292,7 +292,7 @@ def test_wrong_secret_code_blocks_registration(client):
 # TEST 8: VOTING OUTSIDE PHASE — Bỏ phiếu khi bầu cử chưa mở / đã đóng
 def test_vote_before_election_opens(client):
     """Bỏ phiếu khi election status = 'setup' → phải từ chối."""
-    client.post("/setup", data={"election_name": "Test", "candidates_str": "A, B"})
+    client.post("/admin", data={"election_name": "Test", "candidates_str": "A, B"})
     # KHÔNG gọi /admin/open-voting
 
     res = client.post("/api/vote", json={
@@ -301,12 +301,12 @@ def test_vote_before_election_opens(client):
         "packet_hmac": "fake"
     })
     assert res.status_code == 400
-    assert "Chưa mở bỏ phiếu" in res.get_json()["error"]
+    assert "Voting is not open" in res.get_json()["error"]
 
 
 def test_vote_after_election_closes(client):
     """Bỏ phiếu khi election status = 'tallying' → phải từ chối."""
-    client.post("/setup", data={"election_name": "Test", "candidates_str": "A, B"})
+    client.post("/admin", data={"election_name": "Test", "candidates_str": "A, B"})
     client.post("/admin/open-voting")
     client.post("/admin/close-voting")  # Chuyển sang giai đoạn tallying
 
@@ -316,13 +316,13 @@ def test_vote_after_election_closes(client):
         "packet_hmac": "fake"
     })
     assert res.status_code == 400
-    assert "Chưa mở bỏ phiếu" in res.get_json()["error"]
+    assert "Voting is not open" in res.get_json()["error"]
 
 
 # TEST 9: UNAUTHORIZED VOTER — Người không có trong danh sách đăng ký
 def test_unregistered_voter_cannot_get_credential(client):
     """Voter ID không tồn tại trong DB → RA từ chối ký mù."""
-    client.post("/setup", data={"election_name": "Test", "candidates_str": "A, B"})
+    client.post("/admin", data={"election_name": "Test", "candidates_str": "A, B"})
     client.post("/admin/open-voting")
 
     keys_res = client.get("/api/public-keys")
@@ -344,7 +344,7 @@ def test_ballot_count_matches_successful_votes(client):
     Sau khi 3 voter hợp lệ bỏ phiếu, DB phải chứa đúng 3 ballot.
     Kiểm tra tính toàn vẹn của hòm phiếu.
     """
-    client.post("/setup", data={"election_name": "Test", "candidates_str": "A, B"})
+    client.post("/admin", data={"election_name": "Test", "candidates_str": "A, B"})
     client.post("/admin/open-voting")
 
     keys_res = client.get("/api/public-keys")

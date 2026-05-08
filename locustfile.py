@@ -97,8 +97,8 @@ class EVoterUser(HttpUser):
         except Exception:
             return
 
-        # Step 3: Request async sign
-        with self.client.post("/api/register/async",
+        # Step 3: Request sync sign (không cần Celery)
+        with self.client.post("/api/register/sync",
                               json={
                                   "voter_id": self.voter_id, 
                                   "secret_code": self.secret_code,
@@ -108,24 +108,9 @@ class EVoterUser(HttpUser):
             if resp.status_code != 200:
                 resp.failure(f"Register failed: {resp.status_code} {resp.text}")
                 return
-            task_id = resp.json().get("task_id")
+            blind_sig = resp.json().get("blind_signature")
 
-        # Step 4: Poll result
-        blind_sig = None
-        for _ in range(20):  # max 20 polls
-            time.sleep(0.3) # Wait a bit longer for task completion
-            r2 = self.client.get(f"/api/register/result/{task_id}")
-            if r2.status_code == 200:
-                data = r2.json()
-                if data.get("status") == "done": 
-                    blind_sig = data.get("blind_signature")
-                    break
-                elif data.get("status") == "failed":
-                    resp.failure("Celery task failed")
-                    return
-        
         if blind_sig is None:
-            resp.failure("Polling timeout")
             return
 
         # Step 5: Unblind → credential

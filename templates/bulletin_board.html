@@ -1,50 +1,131 @@
 {% extends "base.html" %}
+{% block title %}SecureVote — Public Ledger{% endblock %}
+{% block body_class %}flex min-h-screen{% endblock %}
 
 {% block content %}
-<div class="flex-between mb-2">
-    <div>
-        <h1>Bảng Tin Công Khai (Bulletin Board)</h1>
-        <p>Tất cả phiếu bầu đã mã hóa được lưu Append-Only trên mạng.</p>
+{% set role = session.get('role') %}
+<!-- Sidebar -->
+<nav class="hidden md:flex flex-col w-[260px] bg-surface-container-lowest border-r border-outline-variant fixed left-0 top-0 h-full z-50 p-md">
+    <div class="flex items-center gap-sm mb-xl px-sm pt-sm">
+        <span class="material-symbols-outlined text-primary text-[28px] icon-fill">fingerprint</span>
+        <div><h1 class="text-[17px] font-bold text-primary leading-tight">SecureVote</h1><p class="text-[11px] text-on-surface-variant">Verified Digital Ballot</p></div>
     </div>
-    <form action="/verify/check" method="GET" style="display: flex; gap: 0.5rem;"
-        onsubmit="event.preventDefault(); window.location.href='/verify/' + document.getElementById('search_receipt').value;">
-        <input type="text" id="search_receipt" placeholder="Tìm bằng Receipt Hash..." style="min-width: 300px;">
-        <button type="submit" class="btn btn-primary">Tìm</button>
-    </form>
-</div>
+    <ul class="flex flex-col gap-1 flex-1">
+        <li><a href="{{ url_for('index') }}" class="flex items-center gap-md px-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high text-[13px] font-medium transition-colors"><span class="material-symbols-outlined text-[20px]">dashboard</span>Dashboard</a></li>
+        {% if role == 'admin' %}
+        <li><a href="{{ url_for('admin') }}" class="flex items-center gap-md px-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high text-[13px] font-medium transition-colors"><span class="material-symbols-outlined text-[20px]">admin_panel_settings</span>Admin Console</a></li>
+        {% endif %}
+        {% if role == 'voter' %}
+        <li><a href="{{ url_for('voter_dashboard') }}" class="flex items-center gap-md px-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high text-[13px] font-medium transition-colors"><span class="material-symbols-outlined text-[20px]">how_to_vote</span>My Ballot</a></li>
+        {% endif %}
+        <li><a href="{{ url_for('bulletin_board') }}" class="flex items-center gap-md px-md py-2.5 rounded-lg bg-primary text-on-primary text-[13px] font-semibold"><span class="material-symbols-outlined text-[20px] icon-fill">list_alt</span>Public Ledger</a></li>
+        <li><a href="{{ url_for('security_page') }}" class="flex items-center gap-md px-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high text-[13px] font-medium transition-colors"><span class="material-symbols-outlined text-[20px]">verified_user</span>Security</a></li>
+        {% if not role %}
+        <li><a href="{{ url_for('login') }}" class="flex items-center gap-md px-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high text-[13px] font-medium transition-colors"><span class="material-symbols-outlined text-[20px]">login</span>Login</a></li>
+        {% endif %}
+    </ul>
+    <div class="mt-auto pt-md border-t border-outline-variant">
+        {% if role == 'admin' %}
+        <div class="flex items-center gap-sm px-sm mb-sm">
+            <div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center"><span class="material-symbols-outlined text-on-primary-container text-[16px]">person</span></div>
+            <span class="text-[13px] font-semibold text-on-surface">Administrator</span>
+        </div>
+        <a href="{{ url_for('logout') }}" class="flex items-center gap-sm text-error hover:bg-error-container px-md py-2 rounded-lg text-[13px] font-medium transition-colors"><span class="material-symbols-outlined text-[18px]">logout</span> Logout</a>
+        {% elif role == 'voter' %}
+        <div class="flex items-center gap-sm px-sm mb-sm">
+            <div class="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center"><span class="material-symbols-outlined text-on-secondary-container text-[16px]">person</span></div>
+            <span class="text-[13px] font-semibold text-on-surface">{{ session.get('voter_name', 'Voter') }}</span>
+        </div>
+        <a href="{{ url_for('logout') }}" class="flex items-center gap-sm text-error hover:bg-error-container px-md py-2 rounded-lg text-[13px] font-medium transition-colors"><span class="material-symbols-outlined text-[18px]">logout</span> Logout</a>
+        {% else %}
+        <p class="text-[11px] text-on-surface-variant px-sm">SecureVote Protocol v2.1</p>
+        {% endif %}
+    </div>
+</nav>
 
-<div class="card" style="padding: 0;">
-    <div class="table-responsive">
-        <table style="margin-top: 0;">
-            <thead style="background: rgba(0,0,0,0.2);">
-                <tr>
-                    <th style="padding: 1.5rem 1rem;">Thời Gian Ghi (UTC)</th>
-                    <th style="padding: 1.5rem 1rem;">Receipt (SHA-256)</th>
-                    <th style="padding: 1.5rem 1rem;">Voter Token HMAC Dấu</th>
-                    <th style="padding: 1.5rem 1rem;">ElGamal C1</th>
-                    <th style="padding: 1.5rem 1rem;">ElGamal C2</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% if ballots %}
-                {% for b in ballots %}
-                <tr>
-                    <td style="font-family: monospace; font-size: 0.85rem;">{{ b.submitted_at.strftime('%Y-%m-%d
-                        %H:%M:%S') }}</td>
-                    <td class="hash-text" title="{{ b.receipt }}"><a href="/verify/{{ b.receipt }}"
-                            style="color: inherit; text-decoration: none;">{{ b.receipt[:16] }}...</a></td>
-                    <td class="hash-text">{{ b.token_hash[:16] }}...</td>
-                    <td class="hash-text">{{ b.c1[:16] }}...</td>
-                    <td class="hash-text">{{ b.c2[:16] }}...</td>
-                </tr>
-                {% endfor %}
-                {% else %}
-                <tr>
-                    <td colspan="5" class="text-center" style="padding: 3rem;">Chưa có phiếu bầu nào được ghi.</td>
-                </tr>
-                {% endif %}
-            </tbody>
-        </table>
+<!-- Main -->
+<main class="flex-1 md:ml-[260px] flex flex-col min-h-screen">
+    <header class="flex items-center justify-between px-margin py-md bg-surface-container-lowest border-b border-outline-variant sticky top-0 z-40">
+        <div>
+            <h2 class="text-h2 font-medium text-on-surface">Public Bulletin Board</h2>
+            <p class="text-[12px] text-on-surface-variant">Cryptographically verifiable ledger of all cast ballots.</p>
+        </div>
+        <div class="flex gap-sm">
+            <span class="flex items-center gap-1.5 text-[12px] font-semibold text-on-surface-variant bg-surface-container-low px-3 py-1.5 rounded-lg border border-outline-variant"><span class="material-symbols-outlined text-[16px]">lock</span>End-to-End Encrypted</span>
+        </div>
+    </header>
+
+    <div class="p-margin flex flex-col gap-lg max-w-[1200px] w-full mx-auto">
+        <!-- Stats -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-gutter">
+            <div class="bg-surface-container-lowest rounded-2xl p-lg border border-outline-variant shadow-[0_4px_6px_-1px_rgb(0_0_0/0.05)]">
+                <p class="text-label uppercase text-on-surface-variant mb-sm">Total Ballots</p>
+                <p class="text-[32px] font-bold text-on-surface">{{ ballots|length }}</p>
+            </div>
+            <div class="bg-surface-container-lowest rounded-2xl p-lg border border-outline-variant shadow-[0_4px_6px_-1px_rgb(0_0_0/0.05)]">
+                <p class="text-label uppercase text-on-surface-variant mb-sm">Encryption</p>
+                <p class="text-[14px] font-bold font-mono text-on-surface">ElGamal-256 + RSA-512</p>
+            </div>
+            <div class="bg-surface-container-lowest rounded-2xl p-lg border border-outline-variant shadow-[0_4px_6px_-1px_rgb(0_0_0/0.05)]">
+                <p class="text-label uppercase text-on-surface-variant mb-sm">Integrity</p>
+                <p class="text-[14px] font-bold font-mono text-on-surface">HMAC-SHA256</p>
+            </div>
+        </div>
+
+        <!-- Ballot Table -->
+        <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-[0_4px_6px_-1px_rgb(0_0_0/0.05)] overflow-hidden">
+            <div class="p-md border-b border-outline-variant flex items-center justify-between">
+                <h3 class="text-h2 font-semibold text-on-surface">Verified Ledger</h3>
+                <span class="text-[12px] text-on-surface-variant">{{ ballots|length }} entries</span>
+            </div>
+            {% if ballots|length > 0 %}
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead class="bg-surface-container-low border-b border-outline-variant">
+                        <tr>
+                            <th class="p-md text-label uppercase text-on-surface-variant">Vote Hash (SHA-256)</th>
+                            <th class="p-md text-label uppercase text-on-surface-variant">Timestamp</th>
+                            <th class="p-md text-label uppercase text-on-surface-variant">Status</th>
+                            <th class="p-md text-label uppercase text-on-surface-variant">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-[13px] divide-y divide-outline-variant/50">
+                        {% for b in ballots %}
+                        <tr class="hover:bg-surface-container-low/50 transition-colors">
+                            <td class="p-md font-mono text-primary">{{ b.receipt[:24] }}...</td>
+                            <td class="p-md text-on-surface-variant">{{ b.submitted_at.strftime('%Y-%m-%d %H:%M:%S') if b.submitted_at else '—' }}</td>
+                            <td class="p-md"><span class="inline-flex items-center gap-1 bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded-full text-[11px] font-semibold"><span class="material-symbols-outlined text-[12px] icon-fill">check_circle</span>Verified</span></td>
+                            <td class="p-md"><button onclick="toggleCipher('cipher-{{ loop.index }}')" class="text-primary text-[12px] font-semibold hover:underline">View Proof</button></td>
+                        </tr>
+                        <tr id="cipher-{{ loop.index }}" class="hidden">
+                            <td colspan="4" class="p-0">
+                                <div class="bg-inverse-surface text-inverse-on-surface p-md m-2 rounded-xl">
+                                    <p class="text-label text-primary-fixed-dim mb-1 uppercase">Anonymous Token Hash</p>
+                                    <p class="font-mono text-[11px] mb-md break-all opacity-70">{{ b.token_hash }}</p>
+                                    <p class="text-label text-primary-fixed-dim mb-1 uppercase">ElGamal Ciphertext (C1)</p>
+                                    <p class="font-mono text-[11px] mb-md break-all opacity-70">{{ b.c1[:80] }}...</p>
+                                    <p class="text-label text-primary-fixed-dim mb-1 uppercase">ElGamal Ciphertext (C2)</p>
+                                    <p class="font-mono text-[11px] break-all opacity-70">{{ b.c2[:80] }}...</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="p-xl text-center">
+                <span class="material-symbols-outlined text-outline text-[48px] mb-md block">inventory_2</span>
+                <p class="text-body text-on-surface-variant">No ballots have been cast yet.</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <p class="text-[12px] text-on-surface-variant text-center">Data presented is cryptographically secured. All ballot integrity is verifiable.</p>
     </div>
-</div>
+</main>
+
+<script>
+function toggleCipher(id){document.getElementById(id).classList.toggle('hidden');}
+</script>
 {% endblock %}

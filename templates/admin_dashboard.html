@@ -1,0 +1,328 @@
+{% extends "base.html" %}
+{% block title %}SecureVote — Admin Console{% endblock %}
+{% block body_class %}flex min-h-screen{% endblock %}
+
+{% block content %}
+<!-- Sidebar -->
+<nav class="hidden md:flex flex-col w-[260px] bg-surface-container-lowest border-r border-outline-variant fixed left-0 top-0 h-full z-50 p-md">
+    <div class="flex items-center gap-sm mb-xl px-sm pt-sm">
+        <span class="material-symbols-outlined text-primary text-[28px] icon-fill">fingerprint</span>
+        <div>
+            <h1 class="text-[17px] font-bold text-primary leading-tight">SecureVote</h1>
+            <p class="text-[11px] text-on-surface-variant">Verified Digital Ballot</p>
+        </div>
+    </div>
+    <ul class="flex flex-col gap-1 flex-1">
+        <li><a href="{{ url_for('index') }}" class="flex items-center gap-md px-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high text-[13px] font-medium transition-colors"><span class="material-symbols-outlined text-[20px]">dashboard</span>Dashboard</a></li>
+        <li><a href="{{ url_for('admin') }}" class="flex items-center gap-md px-md py-2.5 rounded-lg bg-primary text-on-primary text-[13px] font-semibold"><span class="material-symbols-outlined text-[20px] icon-fill">admin_panel_settings</span>Admin Console</a></li>
+        <li><a href="{{ url_for('bulletin_board') }}" class="flex items-center gap-md px-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high text-[13px] font-medium transition-colors"><span class="material-symbols-outlined text-[20px]">list_alt</span>Public Ledger</a></li>
+        <li><a href="{{ url_for('security_page') }}" class="flex items-center gap-md px-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high text-[13px] font-medium transition-colors"><span class="material-symbols-outlined text-[20px]">verified_user</span>Security</a></li>
+    </ul>
+    <div class="mt-auto pt-md border-t border-outline-variant">
+        <div class="flex items-center gap-sm px-sm mb-sm">
+            <div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center"><span class="material-symbols-outlined text-on-primary-container text-[16px]">person</span></div>
+            <span class="text-[13px] font-semibold text-on-surface">Administrator</span>
+        </div>
+        <a href="{{ url_for('logout') }}" class="flex items-center gap-sm text-error hover:bg-error-container px-md py-2 rounded-lg text-[13px] font-medium transition-colors">
+            <span class="material-symbols-outlined text-[18px]">logout</span> Logout
+        </a>
+    </div>
+</nav>
+
+<!-- Main -->
+<main class="flex-1 md:ml-[260px] flex flex-col min-h-screen">
+    <header class="flex items-center justify-between px-margin py-md bg-surface-container-lowest border-b border-outline-variant sticky top-0 z-40">
+        <div>
+            <h2 class="text-h2 font-medium text-on-surface">Administrative Console</h2>
+            <p class="text-[12px] text-on-surface-variant">Manage election phases, voters, and results.</p>
+        </div>
+        <a href="{{ url_for('logout') }}" class="w-9 h-9 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-error-container hover:text-error transition-colors border border-outline-variant" title="Logout">
+            <span class="material-symbols-outlined text-[18px]">logout</span>
+        </a>
+    </header>
+
+    <div class="p-margin flex flex-col gap-lg max-w-[1200px] w-full mx-auto">
+
+        {% if not cfg %}
+        <!-- No Election — Setup Required -->
+        <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-[0_4px_6px_-1px_rgb(0_0_0/0.05)] p-xl text-center">
+            <span class="material-symbols-outlined text-outline text-[56px] mb-md block">rocket_launch</span>
+            <h3 class="text-h1 text-on-surface mb-sm">Create New Election</h3>
+            <p class="text-body text-on-surface-variant mb-xl max-w-md mx-auto">Initialize cryptographic keys (ElGamal + RSA) and configure election parameters to begin.</p>
+            <form method="POST" action="{{ url_for('admin') }}" class="max-w-lg mx-auto space-y-md text-left">
+                <div>
+                    <label class="text-label uppercase text-on-surface-variant block mb-1">Election Name</label>
+                    <input name="election_name" type="text" required value="National Election 2024" class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-md py-2.5 text-[13px] font-mono text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-colors">
+                </div>
+                <div>
+                    <label class="text-label uppercase text-on-surface-variant block mb-1">Candidates (comma separated)</label>
+                    <input name="candidates_str" type="text" required value="Alice, Bob, Charlie" class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-md py-2.5 text-[13px] font-mono text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-colors">
+                </div>
+                <button type="submit" class="w-full bg-primary text-on-primary text-[13px] font-semibold py-3 rounded-lg flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors border-b-[3px] border-primary-fixed-dim shadow-sm">
+                    <span class="material-symbols-outlined text-[18px]">rocket_launch</span> Initialize Election & Generate Keys
+                </button>
+            </form>
+        </div>
+
+        {% else %}
+        <!-- Election Banner -->
+        <div class="bg-surface-container-highest rounded-2xl p-lg border border-outline-variant flex flex-col md:flex-row items-start md:items-center justify-between gap-md">
+            <div>
+                <div class="flex items-center gap-sm mb-1"><span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span><span class="text-label uppercase text-secondary tracking-widest">System Operational</span></div>
+                <h3 class="text-h1 text-on-surface">{{ cfg.election_name }}</h3>
+                <p class="text-[12px] font-mono text-on-surface-variant mt-1">Candidates: {{ candidates|join(', ') }}</p>
+            </div>
+            <div class="flex items-center gap-md bg-surface-container-lowest p-md rounded-xl border border-outline-variant">
+                <div class="text-center"><p class="text-label text-on-surface-variant">Status</p><p class="text-[13px] font-bold font-mono text-on-surface">{{ cfg.status|upper }}</p></div>
+                <div class="w-px h-8 bg-outline-variant"></div>
+                <div class="text-center"><p class="text-label text-on-surface-variant">Ballots</p><p class="text-[13px] font-bold font-mono text-on-surface">{{ ballots|length }}</p></div>
+                <div class="w-px h-8 bg-outline-variant"></div>
+                <div class="text-center"><p class="text-label text-on-surface-variant">Voters</p><p class="text-[13px] font-bold font-mono text-on-surface">{{ voters|length }}</p></div>
+            </div>
+        </div>
+
+        <!-- Election Phase Stepper -->
+        <div class="bg-surface-container-lowest rounded-2xl p-lg border border-outline-variant shadow-[0_4px_6px_-1px_rgb(0_0_0/0.05)]">
+            <h3 class="text-h2 font-semibold text-on-surface mb-lg">Election Phases</h3>
+            <div class="flex items-center justify-between gap-2 mb-lg">
+                {% set phases = ['setup', 'voting', 'tallying'] %}
+                {% set labels = {'setup':'Setup','voting':'Active Voting','tallying':'Tallying'} %}
+                {% set icons = {'setup':'settings','voting':'how_to_vote','tallying':'bar_chart'} %}
+                {% set cidx = phases.index(cfg.status) if cfg.status in phases else 0 %}
+                {% for p in phases %}{% set i = loop.index0 %}
+                <div class="flex items-center gap-2 flex-1">
+                    {% if i < cidx %}<div class="w-9 h-9 rounded-full bg-secondary text-on-secondary flex items-center justify-center shrink-0 border-[3px] border-surface-container-lowest shadow"><span class="material-symbols-outlined text-[18px] icon-fill">check</span></div>
+                    {% elif i == cidx %}<div class="w-9 h-9 rounded-full bg-primary text-on-primary flex items-center justify-center shrink-0 ring-2 ring-primary ring-offset-2 shadow"><span class="material-symbols-outlined text-[18px] icon-fill">{{ icons[p] }}</span></div>
+                    {% else %}<div class="w-9 h-9 rounded-full bg-surface-container-high text-on-surface-variant flex items-center justify-center shrink-0"><span class="text-[13px] font-bold">{{ i+1 }}</span></div>{% endif %}
+                    <div class="flex-1"><p class="text-[13px] font-semibold {% if i==cidx %}text-primary{% else %}text-on-surface{% endif %}">{{ labels[p] }}</p><p class="text-[11px] {% if i<cidx %}text-secondary{% elif i==cidx %}text-primary{% else %}text-on-surface-variant{% endif %}">{% if i<cidx %}Completed{% elif i==cidx %}Active{% else %}Pending{% endif %}</p></div>
+                    {% if not loop.last %}<div class="w-8 h-0.5 {% if i<cidx %}bg-secondary{% else %}bg-outline-variant{% endif %} shrink-0"></div>{% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            <!-- Phase Actions -->
+            <div class="flex gap-sm flex-wrap border-t border-outline-variant pt-md">
+                {% if cfg.status == 'setup' %}
+                <form method="POST" action="{{ url_for('open_voting') }}"><button type="submit" class="bg-secondary text-on-secondary px-lg py-2 rounded-lg text-[13px] font-semibold flex items-center gap-1.5 hover:bg-secondary/90 transition-colors"><span class="material-symbols-outlined text-[18px]">play_arrow</span>Open Voting</button></form>
+                {% elif cfg.status == 'voting' %}
+                <form method="POST" action="{{ url_for('close_voting') }}"><button type="submit" class="bg-error text-on-error px-lg py-2 rounded-lg text-[13px] font-semibold flex items-center gap-1.5 hover:bg-error/90 transition-colors"><span class="material-symbols-outlined text-[18px]">stop</span>Close Voting & Start Tally</button></form>
+                {% elif cfg.status == 'tallying' %}
+                <span class="inline-flex items-center gap-1.5 bg-secondary-container text-on-secondary-container px-lg py-2 rounded-lg text-[13px] font-semibold"><span class="material-symbols-outlined text-[18px] icon-fill">check_circle</span>Tallying Complete</span>
+                {% endif %}
+                <a href="{{ url_for('setup') }}" class="bg-surface-container-low text-on-surface-variant border border-outline-variant px-lg py-2 rounded-lg text-[13px] font-semibold flex items-center gap-1.5 hover:bg-surface-container transition-colors"><span class="material-symbols-outlined text-[18px]">restart_alt</span>Reset</a>
+            </div>
+        </div>
+
+        <!-- Admin Tabs -->
+        <div>
+            <div class="flex border-b border-outline-variant mb-lg">
+                <button onclick="showAdminTab('voters')" id="atab-voters" class="px-lg py-2.5 text-[13px] font-semibold border-b-2 border-primary text-primary transition-colors">
+                    <span class="material-symbols-outlined text-[16px] align-middle mr-1">group</span>Voter Management
+                </button>
+                <button onclick="showAdminTab('results')" id="atab-results" class="px-lg py-2.5 text-[13px] font-semibold border-b-2 border-transparent text-on-surface-variant hover:text-on-surface transition-colors">
+                    <span class="material-symbols-outlined text-[16px] align-middle mr-1">bar_chart</span>Results
+                </button>
+                <button onclick="showAdminTab('crypto')" id="atab-crypto" class="px-lg py-2.5 text-[13px] font-semibold border-b-2 border-transparent text-on-surface-variant hover:text-on-surface transition-colors">
+                    <span class="material-symbols-outlined text-[16px] align-middle mr-1">vpn_key</span>Crypto Keys
+                </button>
+            </div>
+
+            <!-- Tab: Voters -->
+            <div id="apanel-voters">
+                <div class="flex flex-col md:flex-row gap-gutter">
+                    <div class="flex-1">
+                        <div class="flex items-center justify-between mb-md">
+                            <h3 class="text-h2 font-semibold text-on-surface">Voter Roll</h3>
+                            <form method="POST" action="{{ url_for('add_bulk_voters') }}">
+                                <button type="submit" class="bg-primary-fixed text-primary px-md py-1.5 rounded-lg text-[12px] font-semibold flex items-center gap-1 hover:bg-primary-fixed-dim transition-colors"><span class="material-symbols-outlined text-[16px]">group_add</span>+10 Demo Voters</button>
+                            </form>
+                        </div>
+                        <form method="POST" action="{{ url_for('add_voter') }}" class="flex gap-sm mb-md">
+                            <input name="voter_id" type="text" required placeholder="Voter ID" class="flex-1 bg-surface-container-low border border-outline-variant rounded-lg px-md py-2 text-[13px] font-mono text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-colors">
+                            <input name="name" type="text" placeholder="Name" class="flex-1 bg-surface-container-low border border-outline-variant rounded-lg px-md py-2 text-[13px] font-mono text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-colors">
+                            <button type="submit" class="bg-primary text-on-primary px-md py-2 rounded-lg text-[12px] font-semibold flex items-center gap-1 hover:bg-primary/90 transition-colors"><span class="material-symbols-outlined text-[16px]">person_add</span>Add</button>
+                        </form>
+                        <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-[0_4px_6px_-1px_rgb(0_0_0/0.05)] overflow-hidden">
+                            <div class="overflow-x-auto max-h-[500px] overflow-y-auto">
+                                <table class="w-full text-left border-collapse">
+                                    <thead class="bg-surface-container-low border-b border-outline-variant sticky top-0">
+                                        <tr>
+                                            <th class="p-md text-label uppercase text-on-surface-variant">Voter ID</th>
+                                            <th class="p-md text-label uppercase text-on-surface-variant">Name</th>
+                                            <th class="p-md text-label uppercase text-on-surface-variant">Secret Code</th>
+                                            <th class="p-md text-label uppercase text-on-surface-variant">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="text-[13px] divide-y divide-outline-variant/50">
+                                        {% for v in voters %}
+                                        <tr class="hover:bg-surface-container-low/50 transition-colors">
+                                            <td class="p-md font-mono text-on-surface">{{ v.voter_id }}</td>
+                                            <td class="p-md text-on-surface-variant">{{ v.name or '—' }}</td>
+                                            <td class="p-md font-mono font-bold text-primary">{{ v.secret_code }}</td>
+                                            <td class="p-md">
+                                                {% if v.status == 'voted' %}<span class="inline-flex items-center gap-1 bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded-full text-[11px] font-semibold"><span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>Voted</span>
+                                                {% elif v.status == 'credential_issued' %}<span class="inline-flex items-center gap-1 bg-tertiary-fixed text-tertiary px-2 py-0.5 rounded-full text-[11px] font-semibold"><span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>Credential</span>
+                                                {% else %}<span class="inline-flex items-center gap-1 bg-surface-container text-on-surface-variant px-2 py-0.5 rounded-full text-[11px] font-semibold"><span class="w-1.5 h-1.5 rounded-full bg-outline"></span>Registered</span>{% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                        {% if not voters %}<tr><td colspan="4" class="p-lg text-center text-on-surface-variant">No voters registered yet.</td></tr>{% endif %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab: Results -->
+            <div id="apanel-results" class="hidden">
+                {% if cfg.status == 'tallying' and results %}
+                <!-- Hero Stats Row -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-gutter mb-lg">
+                    <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-[0_4px_6px_-1px_rgb(0_0_0/0.05)] p-lg text-center">
+                        <div class="w-12 h-12 rounded-xl bg-primary-fixed flex items-center justify-center mx-auto mb-sm"><span class="material-symbols-outlined text-primary text-[24px]">how_to_vote</span></div>
+                        <p class="text-[40px] font-bold text-on-surface leading-none mb-1">{{ total_count }}</p>
+                        <p class="text-label uppercase text-on-surface-variant tracking-widest">Total Ballots</p>
+                    </div>
+                    <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-[0_4px_6px_-1px_rgb(0_0_0/0.05)] p-lg text-center">
+                        <div class="w-12 h-12 rounded-xl bg-secondary-container flex items-center justify-center mx-auto mb-sm"><span class="material-symbols-outlined text-secondary text-[24px] icon-fill">emoji_events</span></div>
+                        <p class="text-[24px] font-bold text-on-surface leading-none mb-1">{% if winner %}{{ winner.candidate }}{% else %}—{% endif %}</p>
+                        <p class="text-label uppercase text-on-surface-variant tracking-widest">Winner</p>
+                    </div>
+                    <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-[0_4px_6px_-1px_rgb(0_0_0/0.05)] p-lg text-center">
+                        <div class="w-12 h-12 rounded-xl bg-tertiary-fixed flex items-center justify-center mx-auto mb-sm"><span class="material-symbols-outlined text-tertiary text-[24px]">percent</span></div>
+                        <p class="text-[40px] font-bold text-on-surface leading-none mb-1">{% if winner %}{{ winner.pct }}%{% else %}—{% endif %}</p>
+                        <p class="text-label uppercase text-on-surface-variant tracking-widest">Winning Margin</p>
+                    </div>
+                </div>
+
+                <!-- Candidate Results -->
+                <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-[0_4px_6px_-1px_rgb(0_0_0/0.05)] p-lg mb-lg">
+                    <div class="flex items-center justify-between mb-lg">
+                        <h3 class="text-h2 font-semibold text-on-surface">Candidate Breakdown</h3>
+                        <span class="text-[11px] font-mono bg-surface-container text-on-surface-variant px-2.5 py-1 rounded border border-outline-variant">Homomorphic Tally</span>
+                    </div>
+                    <div class="space-y-lg">
+                        {% for r in results %}
+                        <div class="{% if winner and r.candidate == winner.candidate %}bg-secondary-container/20 border border-secondary/20 rounded-xl p-md -mx-md{% endif %}">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="flex items-center gap-md">
+                                    <div class="w-10 h-10 rounded-full {% if winner and r.candidate == winner.candidate %}bg-secondary text-on-secondary{% else %}bg-surface-container text-on-surface-variant{% endif %} flex items-center justify-center shrink-0">
+                                        {% if winner and r.candidate == winner.candidate %}
+                                        <span class="material-symbols-outlined text-[18px] icon-fill">emoji_events</span>
+                                        {% else %}
+                                        <span class="material-symbols-outlined text-[18px]">person</span>
+                                        {% endif %}
+                                    </div>
+                                    <div>
+                                        <p class="text-[15px] font-bold text-on-surface">{{ r.candidate }}</p>
+                                        {% if winner and r.candidate == winner.candidate %}
+                                        <p class="text-[11px] font-bold text-secondary uppercase tracking-wider">Winner</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-[22px] font-bold font-mono {% if winner and r.candidate == winner.candidate %}text-secondary{% else %}text-primary{% endif %} leading-none">{{ r.votes }}</p>
+                                    <p class="text-[12px] font-mono text-on-surface-variant">{{ r.pct }}%</p>
+                                </div>
+                            </div>
+                            <div class="w-full bg-surface-container-high h-3 rounded-full overflow-hidden">
+                                <div class="h-full rounded-full transition-all duration-1000 ease-out {% if winner and r.candidate == winner.candidate %}bg-secondary{% else %}bg-primary{% endif %}" style="width:{{ r.pct }}%"></div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Homomorphic Tallying Explanation -->
+                <div class="bg-inverse-surface text-inverse-on-surface rounded-2xl p-lg">
+                    <div class="flex items-center gap-sm mb-md">
+                        <span class="material-symbols-outlined text-primary-fixed-dim text-[20px]">lock</span>
+                        <h3 class="text-h2 font-semibold">Homomorphic Tallying Protocol</h3>
+                    </div>
+                    <p class="text-[13px] opacity-60 mb-md">Votes were tallied without ever decrypting individual ballots, preserving voter privacy.</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-md text-[12px] font-mono opacity-70">
+                        <div class="bg-white/5 rounded-xl p-md space-y-1.5">
+                            <p class="text-primary-fixed-dim font-bold">// Aggregation</p>
+                            <p>C1_agg = ∏ C1_i mod p</p>
+                            <p>C2_agg = ∏ C2_i mod p</p>
+                        </div>
+                        <div class="bg-white/5 rounded-xl p-md space-y-1.5">
+                            <p class="text-primary-fixed-dim font-bold">// Decryption</p>
+                            <p>g^(sum) = C2_agg / C1_agg^sk</p>
+                            <p>BSGS → discrete log → count</p>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant p-xl text-center">
+                    <span class="material-symbols-outlined text-outline text-[48px] mb-md block">lock</span>
+                    <h3 class="text-h2 font-semibold text-on-surface mb-sm">Results Not Available</h3>
+                    <p class="text-body text-on-surface-variant">Close voting to enable automatic homomorphic tallying.</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Tab: Crypto Keys -->
+            <div id="apanel-crypto" class="hidden">
+                <div class="bg-inverse-surface text-inverse-on-surface rounded-2xl p-lg">
+                    <h3 class="text-h2 font-semibold mb-lg">Cryptographic Parameters</h3>
+                    <div class="text-[12px] font-mono space-y-sm opacity-80">
+                        <p class="text-primary-fixed-dim">// ElGamal (Safe Prime 256-bit)</p>
+                        <p>p: {{ cfg.eg_p[:40] }}...</p>
+                        <p>g: {{ cfg.eg_g }}</p>
+                        <p class="text-primary-fixed-dim mt-md">// RSA Blind Signature (Modulus 512-bit)</p>
+                        <p>N: {{ cfg.rsa_N[:40] }}...</p>
+                        <p>e: {{ cfg.rsa_e }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Ballots -->
+        {% if ballots %}
+        <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-[0_4px_6px_-1px_rgb(0_0_0/0.05)] overflow-hidden">
+            <div class="p-md border-b border-outline-variant flex items-center justify-between">
+                <h3 class="text-h2 font-semibold text-on-surface">Recent Ballots ({{ ballots|length }})</h3>
+                <a href="{{ url_for('bulletin_board') }}" class="text-[12px] font-semibold text-primary hover:underline">View All →</a>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead class="bg-surface-container-low border-b border-outline-variant">
+                        <tr>
+                            <th class="p-md text-label uppercase text-on-surface-variant">Token Hash</th>
+                            <th class="p-md text-label uppercase text-on-surface-variant">Receipt</th>
+                            <th class="p-md text-label uppercase text-on-surface-variant">Timestamp</th>
+                            <th class="p-md text-label uppercase text-on-surface-variant">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-[13px] divide-y divide-outline-variant/50">
+                        {% for b in ballots[:10] %}
+                        <tr class="hover:bg-surface-container-low/50 transition-colors">
+                            <td class="p-md font-mono text-primary">{{ b.token_hash[:16] }}...</td>
+                            <td class="p-md font-mono text-on-surface-variant">{{ b.receipt[:16] }}...</td>
+                            <td class="p-md text-on-surface-variant">{{ b.submitted_at.strftime('%Y-%m-%d %H:%M') if b.submitted_at else '—' }}</td>
+                            <td class="p-md"><span class="inline-flex items-center gap-1 bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded-full text-[11px] font-semibold"><span class="material-symbols-outlined text-[12px] icon-fill">check_circle</span>Verified</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+        {% endif %}
+    </div>
+</main>
+
+<script>
+function showAdminTab(t){
+    ['voters','results','crypto'].forEach(function(n){
+        document.getElementById('apanel-'+n).classList.toggle('hidden',n!==t);
+        var btn=document.getElementById('atab-'+n);
+        if(n===t){btn.classList.add('border-primary','text-primary');btn.classList.remove('border-transparent','text-on-surface-variant');}
+        else{btn.classList.remove('border-primary','text-primary');btn.classList.add('border-transparent','text-on-surface-variant');}
+    });
+}
+</script>
+{% endblock %}

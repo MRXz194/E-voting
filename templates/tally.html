@@ -1,66 +1,32 @@
 {% extends "base.html" %}
-
+{% block title %}SecureVote — Results{% endblock %}
+{% block body_class %}flex items-center justify-center min-h-screen{% endblock %}
 {% block content %}
-<div class="text-center mb-2">
-    <h1>Kết Quả Kiểm Phiếu</h1>
-    <p>Thuật toán: <span class="badge success">Homomorphic Addition</span> + <span class="badge info">Baby-step
-            Giant-step</span></p>
-</div>
-
-<div class="grid-2">
-    <div class="card">
-        <h3>Toàn Tập Kết Quả</h3>
-        <p>Tổng số phiếu đồng thuận: <strong>{{ total }}</strong></p>
-
-        <div class="mt-2">
+<main class="w-full max-w-[800px] mx-auto p-margin">
+    <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-[0_4px_6px_-1px_rgb(0_0_0/0.05)] overflow-hidden">
+        <div class="p-lg border-b border-outline-variant bg-surface-container-low flex items-center gap-sm">
+            <span class="material-symbols-outlined text-primary icon-fill">bar_chart</span>
+            <h2 class="text-h2 font-semibold text-on-surface">Election Results — Homomorphic Tally</h2>
+        </div>
+        <div class="p-xl">
+            <div class="text-center mb-xl"><p class="text-label text-on-surface-variant uppercase">Total Ballots</p><p class="text-[48px] font-bold text-on-surface">{{ total }}</p></div>
             {% for r in results %}
-            <div style="margin-bottom: 1.5rem;">
-                <div class="flex-between">
-                    <span style="font-size: 1.1rem; font-weight: 500;">
-                        {{ r.candidate }}
-                        {% if winner and winner.candidate == r.candidate and r.votes > 0 %}
-                        <span class="badge warning" style="margin-left: 0.5rem;">WINNER</span>
-                        {% endif %}
-                    </span>
-                    <span style="font-size: 1.1rem; font-weight: 600; color: white;">{{ r.votes }} phiếu ({{ r.pct
-                        }}%)</span>
+            <div class="mb-lg">
+                <div class="flex justify-between items-center mb-1.5">
+                    <span class="text-[14px] font-bold text-on-surface">{{ r.candidate }}</span>
+                    <span class="text-[14px] font-bold font-mono text-primary">{{ r.votes }} votes ({{ r.pct }}%)</span>
                 </div>
-                <div
-                    style="width: 100%; background: rgba(0,0,0,0.3); height: 12px; border-radius: 6px; margin-top: 0.5rem; overflow: hidden;">
-                    <div
-                        style="height: 100%; width: {{ r.pct }}%; background: linear-gradient(90deg, var(--primary), var(--secondary)); border-radius: 6px;">
-                    </div>
+                <div class="w-full bg-surface-container-high h-3 rounded-full overflow-hidden">
+                    <div class="h-full rounded-full transition-all duration-700 {% if winner and r.candidate==winner.candidate %}bg-secondary{% else %}bg-primary{% endif %}" style="width:{{ r.pct }}%"></div>
                 </div>
+                {% if winner and r.candidate==winner.candidate %}<span class="inline-flex items-center gap-1 text-secondary text-[12px] font-bold mt-1"><span class="material-symbols-outlined text-[14px] icon-fill">emoji_events</span>Winner</span>{% endif %}
             </div>
             {% endfor %}
+            <div class="mt-xl bg-inverse-surface text-inverse-on-surface rounded-xl p-md font-mono text-[11px] opacity-80">
+                <p>// Homomorphic Tally: ∏(C1_i), ∏(C2_i) → decrypt → BSGS → vote count</p>
+            </div>
+            <a href="{{ url_for('admin') }}" class="inline-flex items-center gap-1.5 mt-lg text-primary text-[13px] font-semibold hover:underline"><span class="material-symbols-outlined text-[16px]">arrow_back</span>Back to Admin</a>
         </div>
     </div>
-
-    <div class="card">
-        <h3>Giải Mã Đồng Cấu Từng Ứng Viên</h3>
-        <p style="font-size: 0.9rem;" class="text-muted">Do tính chất \( E(m_1) \otimes E(m_2) = E(m_1 + m_2) \), EA
-            nhân toàn bộ Ciphertext của từng ứng viên trên Bulletin Board, sau đó EA mở mã khóa Private Key của ElGamal
-            <strong>(chỉ 1 lần giải mã / 1 ứng viên)</strong>.</p>
-
-        <div
-            style="background: rgba(0,0,0,0.3); padding: 1.5rem; border-radius: 8px; border: 1px solid var(--border); margin-top: 1rem;">
-            <p style="color: #34d399; font-weight: 500; font-family: monospace;">> Aggregate(C1_i, C2_i) = (C1_sum,
-                C2_sum)</p>
-            <p style="color: #818cf8; font-weight: 500; font-family: monospace;">> Decrypt(C1_sum, C2_sum) = M_sum</p>
-            <p style="color: #fbbf24; font-weight: 500; font-family: monospace;">> M_sum == g^(Tổng_Phiếu) mod p</p>
-
-            <hr style="border-color: rgba(255,255,255,0.1); margin: 1rem 0;">
-
-            <p style="font-size: 0.9rem;" class="text-muted">
-                Dùng thuật toán <strong style="color: white">Baby-step Giant-step (BSGS)</strong> với độ phức tạp
-                \(\mathcal{O}(\sqrt{N})\) để giải hàm logarit rời rạc (DLP) tìm ra "Tổng_Phiếu" (từ mũ của g) trong tích
-                tắc cho 100,000+ phiếu.
-            </p>
-        </div>
-    </div>
-</div>
-
-<div class="text-center mt-2">
-    <a href="/admin" class="btn btn-outline">Trở Về Dashboard</a>
-</div>
+</main>
 {% endblock %}

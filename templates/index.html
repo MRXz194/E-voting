@@ -1,92 +1,226 @@
 {% extends "base.html" %}
+{% block title %}SecureVote — Dashboard{% endblock %}
+{% block body_class %}flex min-h-screen{% endblock %}
 
 {% block content %}
-<div class="card"
-    style="text-align: center; padding: 4rem 2rem; margin-bottom: 2rem; position: relative; overflow: hidden;">
-    <div
-        style="position: absolute; top: -50%; left: -10%; width: 50%; height: 200%; background: radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, transparent 70%); z-index: 0;">
-    </div>
-
-    <div style="position: relative; z-index: 1;">
-        {% if cfg %}
-        <h1 style="font-size: 3.5rem; margin-bottom: 0.5rem;">{{ cfg.election_name }}</h1>
-        <p style="font-size: 1.2rem; color: #a5b4fc;">Trạng thái hệ thống:
-            <span class="badge info" style="font-size: 1rem;">{{ cfg.status | upper }}</span>
-        </p>
-        {% else %}
-        <h1 style="font-size: 3.5rem; margin-bottom: 0.5rem;">Hệ Thống Bầu Cử Điện Tử</h1>
-        <p style="font-size: 1.2rem;">Chưa có cuộc bầu cử nào được thiết lập.</p>
-        {% endif %}
-
-        <div style="margin-top: 2.5rem; display: flex; gap: 1rem; justify-content: center;">
-            <a href="/register" class="btn btn-outline" {% if cfg and cfg.status not in ['setup', 'registration'
-                , 'voting' ] %}style="opacity:0.5; pointer-events:none;" {% endif %}>Nhận Credential</a>
-            <a href="/vote" class="btn btn-primary" {% if not cfg or cfg.status !='voting'
-                %}style="opacity:0.5; pointer-events:none;" {% endif %}>Bỏ Phiếu Ngay</a>
-            {% if not cfg or cfg.status in ['setup', 'registration'] %}
-            <a href="/admin" class="btn btn-outline">Vào Admin (Để Mở Phiếu)</a>
-            {% endif %}
+{% set role = session.get('role') %}
+<!-- Sidebar -->
+<nav class="hidden md:flex flex-col w-[260px] bg-surface-container-lowest border-r border-outline-variant fixed left-0 top-0 h-full z-50 p-md">
+    <div class="flex items-center gap-sm mb-xl px-sm pt-sm">
+        <span class="material-symbols-outlined text-primary text-[28px] icon-fill">fingerprint</span>
+        <div>
+            <h1 class="text-[17px] font-bold text-primary leading-tight">SecureVote</h1>
+            <p class="text-[11px] text-on-surface-variant">Verified Digital Ballot</p>
         </div>
     </div>
-</div>
+    <ul class="flex flex-col gap-1 flex-1">
+        <li><a href="{{ url_for('index') }}" class="flex items-center gap-md px-md py-2.5 rounded-lg bg-primary text-on-primary text-[13px] font-semibold"><span class="material-symbols-outlined text-[20px] icon-fill">dashboard</span>Dashboard</a></li>
+        {% if role == 'admin' %}
+        <li><a href="{{ url_for('admin') }}" class="flex items-center gap-md px-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high text-[13px] font-medium transition-colors"><span class="material-symbols-outlined text-[20px]">admin_panel_settings</span>Admin Console</a></li>
+        {% endif %}
+        {% if role == 'voter' %}
+        <li><a href="{{ url_for('voter_dashboard') }}" class="flex items-center gap-md px-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high text-[13px] font-medium transition-colors"><span class="material-symbols-outlined text-[20px]">how_to_vote</span>My Ballot</a></li>
+        {% endif %}
+        <li><a href="{{ url_for('bulletin_board') }}" class="flex items-center gap-md px-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high text-[13px] font-medium transition-colors"><span class="material-symbols-outlined text-[20px]">list_alt</span>Public Ledger</a></li>
+        <li><a href="{{ url_for('security_page') }}" class="flex items-center gap-md px-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high text-[13px] font-medium transition-colors"><span class="material-symbols-outlined text-[20px]">verified_user</span>Security</a></li>
+        {% if not role %}
+        <li><a href="{{ url_for('login') }}" class="flex items-center gap-md px-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high text-[13px] font-medium transition-colors"><span class="material-symbols-outlined text-[20px]">login</span>Login</a></li>
+        {% endif %}
+    </ul>
+    <div class="mt-auto pt-md border-t border-outline-variant">
+        {% if role == 'admin' %}
+        <div class="flex items-center gap-sm px-sm mb-sm">
+            <div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center"><span class="material-symbols-outlined text-on-primary-container text-[16px]">person</span></div>
+            <span class="text-[13px] font-semibold text-on-surface">Administrator</span>
+        </div>
+        <a href="{{ url_for('logout') }}" class="flex items-center gap-sm text-error hover:bg-error-container px-md py-2 rounded-lg text-[13px] font-medium transition-colors">
+            <span class="material-symbols-outlined text-[18px]">logout</span> Logout
+        </a>
+        {% elif role == 'voter' %}
+        <div class="flex items-center gap-sm px-sm mb-sm">
+            <div class="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center"><span class="material-symbols-outlined text-on-secondary-container text-[16px]">person</span></div>
+            <span class="text-[13px] font-semibold text-on-surface">{{ session.get('voter_name', 'Voter') }}</span>
+        </div>
+        <a href="{{ url_for('logout') }}" class="flex items-center gap-sm text-error hover:bg-error-container px-md py-2 rounded-lg text-[13px] font-medium transition-colors">
+            <span class="material-symbols-outlined text-[18px]">logout</span> Logout
+        </a>
+        {% else %}
+        <p class="text-[11px] text-on-surface-variant px-sm">SecureVote Protocol v2.1</p>
+        {% endif %}
+    </div>
+</nav>
 
-{% if cfg %}
-<div class="grid-3">
-    <div class="card" style="background: linear-gradient(145deg, rgba(26, 32, 53, 0.8), rgba(15, 23, 42, 0.9));">
-        <h3><span style="color: var(--primary);">01</span> Giai Đoạn</h3>
-        <p>Quy trình hiện tại là:</p>
-        <h2 class="status-{{ cfg.status }}" style="margin-top: 1rem; font-size: 2rem;">{{ cfg.status | capitalize }}
-        </h2>
-    </div>
+<!-- Main -->
+<main class="flex-1 md:ml-[260px] flex flex-col min-h-screen">
+    <header class="flex items-center justify-between px-margin py-md bg-surface-container-lowest border-b border-outline-variant sticky top-0 z-40">
+        <h2 class="text-h2 font-medium text-on-surface">System Overview</h2>
+        <div class="flex items-center gap-sm">
+            {% if role == 'admin' %}
+            <a href="{{ url_for('admin') }}" class="bg-primary text-on-primary text-[13px] font-semibold px-lg py-2 rounded-lg flex items-center gap-1.5 hover:bg-primary/90 transition-colors">
+                <span class="material-symbols-outlined text-[18px]">admin_panel_settings</span> Admin Console
+            </a>
+            {% elif role == 'voter' %}
+            <a href="{{ url_for('voter_dashboard') }}" class="bg-primary text-on-primary text-[13px] font-semibold px-lg py-2 rounded-lg flex items-center gap-1.5 hover:bg-primary/90 transition-colors">
+                <span class="material-symbols-outlined text-[18px]">how_to_vote</span> My Ballot
+            </a>
+            {% else %}
+            <a href="{{ url_for('login') }}" class="bg-primary text-on-primary text-[13px] font-semibold px-lg py-2 rounded-lg flex items-center gap-1.5 hover:bg-primary/90 transition-colors">
+                <span class="material-symbols-outlined text-[18px]">login</span> Login
+            </a>
+            {% endif %}
+        </div>
+    </header>
 
-    <div class="card">
-        <h3><span style="color: var(--accent);">02</span> Cử Tri</h3>
-        <p>Số lượng người đăng ký hợp lệ:</p>
-        <h2 style="margin-top: 1rem; font-size: 2.5rem;">{{ voters_count }}</h2>
-    </div>
+    <div class="p-margin flex flex-col gap-lg max-w-[1200px] w-full mx-auto">
+        <!-- Status Banner -->
+        {% if cfg %}
+        <div class="bg-surface-container-highest rounded-2xl p-lg border border-outline-variant">
+            <div class="flex items-center gap-sm mb-sm">
+                <span class="w-2.5 h-2.5 rounded-full bg-secondary animate-pulse"></span>
+                <span class="text-label uppercase text-secondary tracking-widest">System Active</span>
+            </div>
+            <h3 class="text-h1 text-on-surface mb-1">{{ cfg.election_name }}</h3>
+            <div class="flex items-center gap-sm mt-sm">
+                <span class="bg-primary text-on-primary text-[11px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">{{ cfg.status }}</span>
+                <span class="text-[12px] text-on-surface-variant">System is operational</span>
+            </div>
+        </div>
+        {% else %}
+        <div class="bg-surface-container-highest rounded-2xl p-lg border border-outline-variant text-center">
+            <span class="material-symbols-outlined text-outline text-[48px] mb-md block">ballot</span>
+            <h3 class="text-h1 text-on-surface mb-sm">No Active Election</h3>
+            <p class="text-body text-on-surface-variant">An administrator needs to configure the election first.</p>
+        </div>
+        {% endif %}
 
-    <div class="card">
-        <h3><span style="color: var(--warning);">03</span> Phiếu Đã Thu</h3>
-        <p>Tổng số phiếu trong Bulletin Board:</p>
-        <h2 style="margin-top: 1rem; font-size: 2.5rem;">{{ ballots_count }}</h2>
-    </div>
-</div>
+        <!-- Stat Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-gutter">
+            <div class="bg-surface-container-lowest rounded-2xl p-lg border border-outline-variant shadow-[0_4px_6px_-1px_rgb(0_0_0/0.05)]">
+                <p class="text-label uppercase text-on-surface-variant mb-sm">Registered Voters</p>
+                <p class="text-[32px] font-bold text-on-surface leading-none">{{ voters_count }}</p>
+                <div class="flex items-center justify-between mt-md">
+                    <span class="material-symbols-outlined text-outline text-[20px]">group</span>
+                    <span class="text-[11px] font-semibold bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded-full">Active</span>
+                </div>
+            </div>
+            <div class="bg-surface-container-lowest rounded-2xl p-lg border border-outline-variant shadow-[0_4px_6px_-1px_rgb(0_0_0/0.05)]">
+                <p class="text-label uppercase text-on-surface-variant mb-sm">Ballots Cast</p>
+                <p class="text-[32px] font-bold text-on-surface leading-none">{{ ballots_count }}</p>
+                <div class="flex items-center justify-between mt-md">
+                    <span class="material-symbols-outlined text-outline text-[20px]">how_to_vote</span>
+                    <span class="text-[11px] font-semibold bg-primary-fixed text-on-primary-fixed px-2 py-0.5 rounded-full">Encrypted</span>
+                </div>
+            </div>
+            <div class="bg-surface-container-lowest rounded-2xl p-lg border border-outline-variant shadow-[0_4px_6px_-1px_rgb(0_0_0/0.05)]">
+                <p class="text-label uppercase text-on-surface-variant mb-sm">Election Status</p>
+                <p class="text-[32px] font-bold text-on-surface leading-none">{% if cfg %}{{ cfg.status|upper }}{% else %}N/A{% endif %}</p>
+                <div class="flex items-center justify-between mt-md">
+                    <span class="material-symbols-outlined text-outline text-[20px]">settings</span>
+                    {% if cfg %}<span class="text-[11px] font-semibold bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded-full">Online</span>{% endif %}
+                </div>
+            </div>
+            <div class="bg-surface-container-lowest rounded-2xl p-lg border border-outline-variant shadow-[0_4px_6px_-1px_rgb(0_0_0/0.05)]">
+                <p class="text-label uppercase text-on-surface-variant mb-sm">Turnout Rate</p>
+                <p class="text-[32px] font-bold text-on-surface leading-none">{% if voters_count > 0 %}{{ ((ballots_count / voters_count) * 100)|round(1) }}%{% else %}0%{% endif %}</p>
+                <div class="flex items-center justify-between mt-md">
+                    <span class="material-symbols-outlined text-outline text-[20px]">trending_up</span>
+                </div>
+            </div>
+        </div>
 
-<div class="card mt-2">
-    <div class="flex-between">
-        <h2>Kiến trúc Cryptography</h2>
-        <a href="/api/public-keys" target="_blank" class="badge info">Xem Public API</a>
+        <!-- Election Results (If Tallying) -->
+        {% if cfg and cfg.status == 'tallying' and results %}
+        <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-[0_4px_6px_-1px_rgb(0_0_0/0.05)] p-lg mb-lg">
+            <div class="flex items-center justify-between mb-lg">
+                <h3 class="text-h2 font-semibold text-on-surface">Final Election Results</h3>
+                <span class="text-[11px] font-mono bg-surface-container text-on-surface-variant px-2.5 py-1 rounded border border-outline-variant">Homomorphic Tally</span>
+            </div>
+            <div class="space-y-lg">
+                {% for r in results %}
+                <div class="{% if winner and r.candidate == winner.candidate %}bg-secondary-container/20 border border-secondary/20 rounded-xl p-md -mx-md{% endif %}">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center gap-md">
+                            <div class="w-10 h-10 rounded-full {% if winner and r.candidate == winner.candidate %}bg-secondary text-on-secondary{% else %}bg-surface-container text-on-surface-variant{% endif %} flex items-center justify-center shrink-0">
+                                {% if winner and r.candidate == winner.candidate %}
+                                <span class="material-symbols-outlined text-[18px] icon-fill">emoji_events</span>
+                                {% else %}
+                                <span class="material-symbols-outlined text-[18px]">person</span>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <p class="text-[15px] font-bold text-on-surface">{{ r.candidate }}</p>
+                                {% if winner and r.candidate == winner.candidate %}
+                                <p class="text-[11px] font-bold text-secondary uppercase tracking-wider">Winner</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-[22px] font-bold font-mono {% if winner and r.candidate == winner.candidate %}text-secondary{% else %}text-primary{% endif %} leading-none">{{ r.votes }}</p>
+                            <p class="text-[12px] font-mono text-on-surface-variant">{{ r.pct }}%</p>
+                        </div>
+                    </div>
+                    <div class="w-full bg-surface-container-high h-3 rounded-full overflow-hidden">
+                        <div class="h-full rounded-full transition-all duration-1000 ease-out {% if winner and r.candidate == winner.candidate %}bg-secondary{% else %}bg-primary{% endif %}" style="width:{{ r.pct }}%"></div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Two Columns -->
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-gutter">
+            <!-- System Features -->
+            <div class="lg:col-span-3 bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-[0_4px_6px_-1px_rgb(0_0_0/0.05)] p-lg">
+                <h3 class="text-h2 font-semibold text-on-surface mb-lg">Security Architecture</h3>
+                <div class="space-y-md">
+                    <div class="flex items-start gap-md p-md bg-surface-container-low rounded-xl">
+                        <div class="w-10 h-10 rounded-xl bg-primary-fixed flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-primary text-[20px]">enhanced_encryption</span></div>
+                        <div>
+                            <p class="text-[13px] font-bold text-on-surface">ElGamal Homomorphic Encryption</p>
+                            <p class="text-[12px] text-on-surface-variant mt-0.5">Votes are encrypted and tallied without decryption of individual ballots.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-md p-md bg-surface-container-low rounded-xl">
+                        <div class="w-10 h-10 rounded-xl bg-secondary-container flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-secondary text-[20px]">draw</span></div>
+                        <div>
+                            <p class="text-[13px] font-bold text-on-surface">RSA Blind Signature</p>
+                            <p class="text-[12px] text-on-surface-variant mt-0.5">Anonymous credential issuance — authority signs without seeing the token.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-md p-md bg-surface-container-low rounded-xl">
+                        <div class="w-10 h-10 rounded-xl bg-tertiary-fixed flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-tertiary text-[20px]">verified_user</span></div>
+                        <div>
+                            <p class="text-[13px] font-bold text-on-surface">HMAC-SHA256 Integrity</p>
+                            <p class="text-[12px] text-on-surface-variant mt-0.5">Every ballot packet is signed to prevent man-in-the-middle tampering.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Quick Links -->
+            <div class="lg:col-span-2 bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-[0_4px_6px_-1px_rgb(0_0_0/0.05)] p-lg flex flex-col">
+                <h3 class="text-h2 font-semibold text-on-surface mb-lg">Quick Actions</h3>
+                <div class="space-y-sm flex-1">
+                    <a href="{{ url_for('bulletin_board') }}" class="flex items-center gap-md p-md bg-surface-container-low rounded-xl hover:bg-surface-container transition-colors">
+                        <span class="material-symbols-outlined text-primary text-[20px]">list_alt</span>
+                        <span class="text-[13px] font-semibold text-on-surface">View Public Ledger</span>
+                    </a>
+                    <a href="{{ url_for('security_page') }}" class="flex items-center gap-md p-md bg-surface-container-low rounded-xl hover:bg-surface-container transition-colors">
+                        <span class="material-symbols-outlined text-primary text-[20px]">security</span>
+                        <span class="text-[13px] font-semibold text-on-surface">Security Architecture</span>
+                    </a>
+                    {% if not role %}
+                    <a href="{{ url_for('login') }}" class="flex items-center gap-md p-md bg-surface-container-low rounded-xl hover:bg-surface-container transition-colors">
+                        <span class="material-symbols-outlined text-primary text-[20px]">login</span>
+                        <span class="text-[13px] font-semibold text-on-surface">Login to Vote</span>
+                    </a>
+                    {% endif %}
+                </div>
+                <div class="mt-lg pt-md border-t border-outline-variant">
+                    <p class="text-[11px] text-on-surface-variant">SecureVote — End-to-end encrypted e-voting system.</p>
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="table-responsive mt-1">
-        <table>
-            <tbody>
-                <tr>
-                    <td style="width: 25%;"><strong>Mã hóa Phiếu (ElGamal)</strong></td>
-                    <td>
-                        <span class="badge success">Homomorphic Tally</span><br>
-                        <small class="text-muted">Nhân các ciphertext để lấy tổng mà không cần giải mã từng phiếu, dựa
-                            trên bài toán DLP.</small>
-                    </td>
-                </tr>
-                <tr>
-                    <td><strong>Phân phối Token (RSA)</strong></td>
-                    <td>
-                        <span class="badge success">Blind Signature</span><br>
-                        <small class="text-muted">Đảm bảo danh tính cử tri tách biệt với nội dung phiếu bầu bằng thuật
-                            toán Chaum.</small>
-                    </td>
-                </tr>
-                <tr>
-                    <td><strong>Xác thực Gói tin</strong></td>
-                    <td>
-                        <span class="badge success">HMAC-SHA256</span><br>
-                        <small class="text-muted">Chống tấn công thay đổi nội dung trên đường truyền tới Bulletin Board
-                            (BB API).</small>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-</div>
-{% endif %}
+</main>
 {% endblock %}

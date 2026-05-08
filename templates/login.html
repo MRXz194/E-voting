@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block title %}SecureVote — Login{% endblock %}
+{% block body_class %}flex items-center justify-center min-h-screen{% endblock %}
+
+{% block content %}
+<main class="w-full max-w-[960px] flex flex-col md:flex-row bg-surface-container-lowest rounded-3xl shadow-[0px_4px_40px_rgba(71,85,105,0.08)] border border-outline-variant overflow-hidden m-4">
+    <!-- Left Pane -->
+    <div class="hidden md:flex md:w-5/12 bg-surface-container-low flex-col justify-between p-xl border-r border-outline-variant">
+        <div>
+            <div class="flex items-center gap-sm mb-lg">
+                <span class="material-symbols-outlined text-primary text-[32px] icon-fill">fingerprint</span>
+                <span class="text-h1 font-bold text-primary">SecureVote</span>
+            </div>
+            <h1 class="text-[28px] font-bold text-on-surface mb-md leading-tight">Verified Digital Ballot</h1>
+            <p class="text-body text-on-surface-variant">Experience the future of democratic participation. Your identity is cryptographically verified, and your vote is permanently secured.</p>
+        </div>
+        <div class="space-y-md">
+            <div class="flex items-center gap-md">
+                <div class="w-10 h-10 rounded-full bg-secondary-container flex items-center justify-center shrink-0">
+                    <span class="material-symbols-outlined text-on-secondary-container text-[20px]">shield_lock</span>
+                </div>
+                <div>
+                    <p class="text-[13px] font-bold text-on-surface">End-to-End Encryption</p>
+                    <p class="text-[12px] text-on-surface-variant">Tamper-proof architecture.</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-md">
+                <div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center shrink-0">
+                    <span class="material-symbols-outlined text-on-surface text-[20px]">how_to_vote</span>
+                </div>
+                <div>
+                    <p class="text-[13px] font-bold text-on-surface">Anonymity Guaranteed</p>
+                    <p class="text-[12px] text-on-surface-variant">Identity decoupled from selection.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Right Pane -->
+    <div class="w-full md:w-7/12 p-xl md:p-2xl flex flex-col justify-center">
+        <div class="md:hidden flex flex-col items-center mb-xl">
+            <div class="w-16 h-16 rounded-full bg-surface-container-low flex items-center justify-center mb-md border border-outline-variant">
+                <span class="material-symbols-outlined text-primary text-[32px] icon-fill">fingerprint</span>
+            </div>
+            <h2 class="text-h1 font-bold text-primary">SecureVote</h2>
+        </div>
+        <div class="mb-lg">
+            <h2 class="text-[22px] font-bold text-on-surface mb-1">Access Portal</h2>
+            <p class="text-body text-on-surface-variant">Please authenticate to continue.</p>
+        </div>
+        <!-- Tabs -->
+        <div id="login-tabs" class="flex p-[3px] bg-surface-container rounded-lg mb-xl border border-outline-variant/50">
+            <button onclick="switchTab('voter')" id="tab-voter" class="flex-1 py-sm text-[13px] font-medium rounded-md transition-all flex items-center justify-center gap-1.5 bg-surface-container-lowest text-primary shadow-sm">
+                <span class="material-symbols-outlined text-[18px]">person</span> Voter
+            </button>
+            <button onclick="switchTab('admin')" id="tab-admin" class="flex-1 py-sm text-[13px] font-medium rounded-md transition-all flex items-center justify-center gap-1.5 text-on-surface-variant hover:text-on-surface">
+                <span class="material-symbols-outlined text-[18px]">admin_panel_settings</span> Admin
+            </button>
+        </div>
+        <!-- Voter Form -->
+        <form id="form-voter" method="POST" action="{{ url_for('login') }}" class="space-y-lg">
+            <input type="hidden" name="role" value="voter">
+            <div class="space-y-sm">
+                <label class="text-label uppercase text-on-surface block">Voter ID</label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-md flex items-center pointer-events-none"><span class="material-symbols-outlined text-outline">badge</span></div>
+                    <input name="voter_id" type="text" required placeholder="Enter your voter ID" class="w-full pl-12 pr-md py-3 bg-surface-container-low border border-outline-variant rounded-lg text-[13px] font-mono text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors placeholder:text-outline/70">
+                </div>
+            </div>
+            <div class="space-y-sm">
+                <label class="text-label uppercase text-on-surface block">Secret Code</label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-md flex items-center pointer-events-none"><span class="material-symbols-outlined text-outline">vpn_key</span></div>
+                    <input name="secret_code" type="password" required placeholder="••••••" class="w-full pl-12 pr-md py-3 bg-surface-container-low border border-outline-variant rounded-lg text-[13px] font-mono text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors placeholder:text-outline/70">
+                </div>
+            </div>
+            <button type="submit" class="w-full bg-primary text-on-primary text-[13px] font-semibold py-3 rounded-lg flex items-center justify-center gap-2 border-b-[3px] border-primary-fixed-dim hover:bg-primary/90 transition-colors shadow-sm">
+                <span class="material-symbols-outlined text-[18px]">fingerprint</span> Authenticate Identity
+            </button>
+        </form>
+        <!-- Admin Form -->
+        <form id="form-admin" method="POST" action="{{ url_for('login') }}" class="space-y-lg hidden">
+            <input type="hidden" name="role" value="admin">
+            <div class="space-y-sm">
+                <label class="text-label uppercase text-on-surface block">Username</label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-md flex items-center pointer-events-none"><span class="material-symbols-outlined text-outline">shield_person</span></div>
+                    <input name="username" type="text" required placeholder="admin" class="w-full pl-12 pr-md py-3 bg-surface-container-low border border-outline-variant rounded-lg text-[13px] font-mono text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors placeholder:text-outline/70">
+                </div>
+            </div>
+            <div class="space-y-sm">
+                <label class="text-label uppercase text-on-surface block">Password</label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-md flex items-center pointer-events-none"><span class="material-symbols-outlined text-outline">lock</span></div>
+                    <input name="password" type="password" required placeholder="••••••••" class="w-full pl-12 pr-md py-3 bg-surface-container-low border border-outline-variant rounded-lg text-[13px] font-mono text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors placeholder:text-outline/70">
+                </div>
+            </div>
+            <button type="submit" class="w-full bg-inverse-surface text-inverse-on-surface text-[13px] font-semibold py-3 rounded-lg flex items-center justify-center gap-2 hover:bg-inverse-surface/90 transition-colors shadow-sm">
+                <span class="material-symbols-outlined text-[18px]">admin_panel_settings</span> Admin Login
+            </button>
+        </form>
+        <div class="mt-xl text-center">
+            <p class="text-[12px] text-on-surface-variant flex items-center justify-center gap-1">
+                <span class="material-symbols-outlined text-[14px]">lock</span> Secured by 256-bit encryption
+            </p>
+        </div>
+    </div>
+</main>
+<script>
+function switchTab(role){
+    var tv=document.getElementById('tab-voter'),ta=document.getElementById('tab-admin'),fv=document.getElementById('form-voter'),fa=document.getElementById('form-admin');
+    if(role==='voter'){tv.className='flex-1 py-sm text-[13px] font-medium rounded-md transition-all flex items-center justify-center gap-1.5 bg-surface-container-lowest text-primary shadow-sm';ta.className='flex-1 py-sm text-[13px] font-medium rounded-md transition-all flex items-center justify-center gap-1.5 text-on-surface-variant hover:text-on-surface';fv.classList.remove('hidden');fa.classList.add('hidden');}
+    else{ta.className='flex-1 py-sm text-[13px] font-medium rounded-md transition-all flex items-center justify-center gap-1.5 bg-surface-container-lowest text-primary shadow-sm';tv.className='flex-1 py-sm text-[13px] font-medium rounded-md transition-all flex items-center justify-center gap-1.5 text-on-surface-variant hover:text-on-surface';fa.classList.remove('hidden');fv.classList.add('hidden');}
+}
+</script>
+{% endblock %}
