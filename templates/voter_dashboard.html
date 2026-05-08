@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+{% block title %}SecureVote — Vote{% endblock %}
+{% block body_class %}flex flex-col min-h-screen{% endblock %}
+
+{% block content %}
+<header class="flex items-center justify-between px-margin py-md bg-surface-container-lowest border-b border-outline-variant sticky top-0 z-40">
+    <div class="flex items-center gap-sm">
+        <span class="material-symbols-outlined text-primary text-[24px] icon-fill">fingerprint</span>
+        <span class="text-[17px] font-bold text-primary">SecureVote</span>
+    </div>
+    <div class="flex items-center gap-md">
+        <span class="text-[12px] font-mono text-on-surface-variant bg-surface-container px-2.5 py-1 rounded border border-outline-variant">Session ID: {{ voter.voter_id[:8] }}</span>
+        <a href="{{ url_for('logout') }}" class="text-error text-[13px] font-semibold flex items-center gap-1 hover:underline"><span class="material-symbols-outlined text-[16px]">logout</span>Logout</a>
+    </div>
+</header>
+
+<main class="flex-1 flex">
+    <!-- Main Content -->
+    <div class="flex-1 p-margin max-w-[800px] mx-auto w-full">
+        <!-- Voter Info -->
+        <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant p-lg mb-lg flex items-center justify-between shadow-[0_4px_6px_-1px_rgb(0_0_0/0.05)]">
+            <div>
+                <h2 class="text-h2 font-semibold text-on-surface">Welcome, {{ voter.name or voter.voter_id }}</h2>
+                <p class="text-[12px] text-on-surface-variant">{{ cfg.election_name }} — Status: <span class="font-bold text-primary">{{ cfg.status|upper }}</span></p>
+            </div>
+            {% if voter.status == 'voted' %}
+            <span class="inline-flex items-center gap-1 bg-secondary-container text-on-secondary-container px-3 py-1.5 rounded-full text-[12px] font-bold"><span class="material-symbols-outlined text-[16px] icon-fill">check_circle</span>Voted</span>
+            {% endif %}
+        </div>
+
+        {% if voter.status == 'voted' %}
+        <!-- Already Voted -->
+        <div class="bg-secondary-container rounded-2xl p-xl text-center border border-secondary/20">
+            <span class="material-symbols-outlined text-secondary text-[56px] mb-md block icon-fill">task_alt</span>
+            <h3 class="text-h1 text-on-secondary-container mb-sm">Vote Recorded</h3>
+            <p class="text-body text-on-secondary-container/80">Your encrypted ballot has been submitted and verified on the public ledger.</p>
+            <a href="{{ url_for('bulletin_board') }}" class="inline-flex items-center gap-1.5 mt-lg bg-surface-container-lowest text-primary px-lg py-2.5 rounded-lg text-[13px] font-semibold border border-outline-variant hover:bg-surface-container-low transition-colors"><span class="material-symbols-outlined text-[18px]">list_alt</span>View Bulletin Board</a>
+        </div>
+
+        {% elif cfg.status != 'voting' %}
+        <!-- Voting Not Open -->
+        <div class="bg-surface-container-highest rounded-2xl p-xl text-center border border-outline-variant">
+            <span class="material-symbols-outlined text-outline text-[56px] mb-md block">schedule</span>
+            <h3 class="text-h1 text-on-surface mb-sm">Voting Not Open</h3>
+            <p class="text-body text-on-surface-variant">The election is currently in <strong>{{ cfg.status|upper }}</strong> phase. Please wait for voting to open.</p>
+        </div>
+
+        {% else %}
+        <!-- Voting Wizard -->
+        <!-- Step Indicator -->
+        <div class="flex items-center justify-center gap-0 mb-xl">
+            {% set steps = ['Confirm', 'Select Candidate', 'Encrypt & Sign', 'Receipt'] %}
+            {% set step_icons = ['verified_user', 'how_to_vote', 'enhanced_encryption', 'receipt_long'] %}
+            {% for s in steps %}
+            <div class="flex items-center gap-1.5">
+                <div id="step-dot-{{ loop.index }}" class="w-8 h-8 rounded-full flex items-center justify-center text-[12px] font-bold transition-all {% if loop.index == 1 %}bg-primary text-on-primary ring-2 ring-primary ring-offset-2{% else %}bg-surface-container-high text-on-surface-variant{% endif %}">{{ loop.index }}</div>
+                <span id="step-label-{{ loop.index }}" class="text-[12px] font-semibold {% if loop.index == 1 %}text-primary{% else %}text-on-surface-variant{% endif %} hidden md:inline">{{ s }}</span>
+                {% if not loop.last %}<div id="step-line-{{ loop.index }}" class="w-8 h-0.5 bg-outline-variant mx-1"></div>{% endif %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Step 1: Confirm -->
+        <div id="wizard-step-1" class="bg-surface-container-lowest rounded-2xl border border-outline-variant p-lg shadow-[0_4px_6px_-1px_rgb(0_0_0/0.05)]">
+            <h3 class="text-h2 font-semibold text-on-surface mb-md">Confirm Your Identity</h3>
+            <div class="bg-surface-container-low rounded-xl p-md mb-lg text-[13px] space-y-1">
+                <p><span class="text-on-surface-variant">Voter ID:</span> <span class="font-mono font-bold text-on-surface">{{ voter.voter_id }}</span></p>
+                <p><span class="text-on-surface-variant">Name:</span> <span class="font-bold text-on-surface">{{ voter.name or 'N/A' }}</span></p>
+                <p><span class="text-on-surface-variant">Election:</span> <span class="font-bold text-on-surface">{{ cfg.election_name }}</span></p>
+            </div>
+            <label class="flex items-center gap-md p-md bg-primary-fixed/30 rounded-xl border border-primary/20 cursor-pointer mb-lg">
+                <input type="checkbox" id="confirm-check" class="w-5 h-5 rounded accent-primary">
+                <span class="text-[13px] text-on-surface">I confirm that I am the authorized voter and understand my vote is final.</span>
+            </label>
+            <button onclick="goStep(2)" id="btn-step1" disabled class="w-full bg-primary text-on-primary text-[13px] font-semibold py-3 rounded-lg flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors border-b-[3px] border-primary-fixed-dim disabled:opacity-50 disabled:cursor-not-allowed">Continue to Candidate Selection <span class="material-symbols-outlined text-[18px]">arrow_forward</span></button>
+        </div>
+
+        <!-- Step 2: Select Candidate -->
+        <div id="wizard-step-2" class="hidden bg-surface-container-lowest rounded-2xl border border-outline-variant p-lg shadow-[0_4px_6px_-1px_rgb(0_0_0/0.05)]">
+            <h3 class="text-h2 font-semibold text-on-surface mb-sm">Choose Your Candidate</h3>
+            <p class="text-[12px] text-on-surface-variant mb-lg">Your selection is locally encrypted before submission.</p>
+            <div class="space-y-sm mb-lg">
+                {% for cand in candidates %}
+                <label class="flex items-center gap-lg p-md bg-surface-container-low border-2 border-transparent rounded-xl cursor-pointer hover:border-primary/30 transition-all candidate-card">
+                    <input type="radio" name="candidate_idx" value="{{ loop.index0 }}" data-name="{{ cand }}" class="w-5 h-5 accent-primary" onchange="document.getElementById('btn-step2').disabled=false;document.querySelectorAll('.candidate-card').forEach(c=>c.classList.remove('border-primary','bg-primary-fixed/20'));this.closest('.candidate-card').classList.add('border-primary','bg-primary-fixed/20')">
+                    <div class="flex items-center gap-md flex-1">
+                        <div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center"><span class="material-symbols-outlined text-outline text-[20px]">person</span></div>
+                        <span class="text-[14px] font-semibold text-on-surface">{{ cand }}</span>
+                    </div>
+                </label>
+                {% endfor %}
+            </div>
+            <div class="flex gap-sm">
+                <button onclick="goStep(1)" class="px-lg py-2.5 rounded-lg text-[13px] font-semibold text-on-surface-variant border border-outline-variant hover:bg-surface-container-low transition-colors">Back</button>
+                <button onclick="goStep(3)" id="btn-step2" disabled class="flex-1 bg-primary text-on-primary text-[13px] font-semibold py-2.5 rounded-lg flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors border-b-[3px] border-primary-fixed-dim disabled:opacity-50 disabled:cursor-not-allowed">Encrypt & Submit <span class="material-symbols-outlined text-[18px]">arrow_forward</span></button>
+            </div>
+        </div>
+
+        <!-- Step 3: Encrypt & Sign -->
+        <div id="wizard-step-3" class="hidden bg-surface-container-lowest rounded-2xl border border-outline-variant p-lg shadow-[0_4px_6px_-1px_rgb(0_0_0/0.05)]">
+            <h3 class="text-h2 font-semibold text-on-surface mb-md">Encrypting Your Ballot</h3>
+            <div id="crypto-log" class="bg-inverse-surface text-inverse-on-surface rounded-xl p-md font-mono text-[12px] space-y-2 min-h-[200px]"></div>
+        </div>
+
+        <!-- Step 4: Receipt -->
+        <div id="wizard-step-4" class="hidden bg-secondary-container/30 rounded-2xl border border-secondary/20 p-lg text-center">
+            <span class="material-symbols-outlined text-secondary text-[56px] mb-md block icon-fill">task_alt</span>
+            <h3 class="text-h1 text-on-surface mb-sm">Vote Successfully Cast!</h3>
+            <p class="text-body text-on-surface-variant mb-lg">Your ballot has been encrypted and submitted to the bulletin board.</p>
+            <div class="bg-inverse-surface text-inverse-on-surface rounded-xl p-md mb-lg">
+                <p class="text-label text-primary-fixed-dim mb-1 uppercase">Receipt Hash</p>
+                <p id="receipt-hash" class="font-mono text-[13px] break-all"></p>
+            </div>
+            <div class="flex gap-sm justify-center">
+                <button onclick="navigator.clipboard.writeText(document.getElementById('receipt-hash').textContent)" class="bg-surface-container-lowest text-on-surface px-lg py-2.5 rounded-lg text-[13px] font-semibold border border-outline-variant hover:bg-surface-container-low transition-colors flex items-center gap-1.5"><span class="material-symbols-outlined text-[16px]">content_copy</span>Copy Receipt</button>
+                <a href="{{ url_for('bulletin_board') }}" class="bg-primary text-on-primary px-lg py-2.5 rounded-lg text-[13px] font-semibold flex items-center gap-1.5 hover:bg-primary/90 transition-colors"><span class="material-symbols-outlined text-[16px]">list_alt</span>View Ledger</a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Security Monitor (Desktop) -->
+    {% if cfg.status == 'voting' and voter.status != 'voted' %}
+    <aside class="hidden lg:flex flex-col w-[280px] bg-inverse-surface text-inverse-on-surface p-md border-l border-outline-variant">
+        <div class="flex items-center gap-sm mb-md"><span class="material-symbols-outlined text-secondary-fixed text-[18px] icon-fill">security</span><span class="text-label uppercase tracking-widest text-secondary-fixed">Security Monitor</span></div>
+        <div id="sec-monitor" class="font-mono text-[11px] opacity-70 space-y-1.5 flex-1">
+            <p>> Initializing secure enclave... OK</p>
+            <p>> Handshake established.</p>
+            <p>> Awaiting voter action...</p>
+        </div>
+        <div class="mt-auto pt-md border-t border-white/10 text-[10px] opacity-50">SecureVote Protocol v2.1</div>
+    </aside>
+    {% endif %}
+</main>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='crypto.js') }}"></script>
+<script>
+var currentStep=1;
+var numCandidates={{ candidates|length }};
+
+document.getElementById('confirm-check')?.addEventListener('change',function(){document.getElementById('btn-step1').disabled=!this.checked;});
+
+function goStep(s){
+    if(s===3){processVote();return;}
+    for(var i=1;i<=4;i++){
+        var el=document.getElementById('wizard-step-'+i);
+        if(el)el.classList.toggle('hidden',i!==s);
+        var dot=document.getElementById('step-dot-'+i);
+        var lbl=document.getElementById('step-label-'+i);
+        if(dot){
+            if(i<s){dot.className='w-8 h-8 rounded-full flex items-center justify-center text-[12px] font-bold transition-all bg-secondary text-on-secondary';dot.innerHTML='<span class="material-symbols-outlined text-[16px] icon-fill">check</span>';}
+            else if(i===s){dot.className='w-8 h-8 rounded-full flex items-center justify-center text-[12px] font-bold transition-all bg-primary text-on-primary ring-2 ring-primary ring-offset-2';dot.textContent=i;}
+            else{dot.className='w-8 h-8 rounded-full flex items-center justify-center text-[12px] font-bold transition-all bg-surface-container-high text-on-surface-variant';dot.textContent=i;}
+        }
+        if(lbl){lbl.className='text-[12px] font-semibold hidden md:inline '+(i<=s?'text-primary':'text-on-surface-variant');}
+        var line=document.getElementById('step-line-'+i);
+        if(line)line.className='w-8 h-0.5 mx-1 '+(i<s?'bg-secondary':'bg-outline-variant');
+    }
+    currentStep=s;
+}
+
+function addLog(msg,type){
+    var log=document.getElementById('crypto-log');
+    var c=type==='ok'?'text-secondary-fixed':type==='err'?'text-error':'text-inverse-on-surface opacity-70';
+    log.innerHTML+='<p class="'+c+'">'+msg+'</p>';
+    log.scrollTop=log.scrollHeight;
+    var mon=document.getElementById('sec-monitor');
+    if(mon){mon.innerHTML+='<p class="'+(type==='ok'?'text-secondary-fixed':'')+'">'+msg+'</p>';mon.scrollTop=mon.scrollHeight;}
+}
+
+async function processVote(){
+    goStepRaw(3);
+    var sel=document.querySelector('input[name="candidate_idx"]:checked');
+    var cidx=parseInt(sel.value),cname=sel.dataset.name;
+    var voterId=sessionStorage.getItem('voter_id')||'{{ voter.voter_id }}';
+
+    addLog('> Fetching ElGamal public keys...','');
+    try{
+        // Step A: Get keys & register
+        var kr=await fetch('/api/public-keys');var keys=await kr.json();
+        var rsaN=BigInt(keys.rsa.N),rsaE=BigInt(keys.rsa.e);
+        var p=BigInt(keys.elgamal.p),g=BigInt(keys.elgamal.g),y=BigInt(keys.elgamal.y);
+        addLog('> Public keys received.','ok');
+
+        // Step B: Blind signature
+        addLog('> Generating anonymous token...','');
+        var token='tok_'+voterId+'_'+Math.floor(Math.random()*1e9);
+        var{blinded,r}=await CryptoUtils.blindToken(token,rsaN,rsaE);
+        addLog('> Token blinded. Requesting RA signature...','');
+        var sRes=await fetch('/api/register/sync',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({voter_id:voterId,secret_code:'{{ voter.secret_code }}',blinded_token:blinded})});
+        var sData=await sRes.json();
+        if(sData.error)throw new Error(sData.error);
+        var credential=CryptoUtils.unblindSignature(sData.blind_signature,r,rsaN);
+        addLog('> Credential obtained (RSA Blind Sig).','ok');
+
+        // Step C: ElGamal encrypt
+        addLog('> Encrypting ballot with ElGamal...','');
+        var c1a=[],c2a=[];
+        for(var i=0;i<numCandidates;i++){
+            var vb=(i===cidx)?1n:0n;
+            var ct=CryptoUtils.elGamalEncrypt(vb,p,g,y);
+            c1a.push(ct.c1.toString());c2a.push(ct.c2.toString());
+        }
+        var c1j=JSON.stringify(c1a),c2j=JSON.stringify(c2a);
+        addLog('> '+numCandidates+' cipher blocks generated.','ok');
+
+        // Step D: HMAC
+        addLog('> Computing HMAC-SHA256 integrity...','');
+        var hmac=await CryptoUtils.computeHMAC(token,credential,c1j,c2j);
+        addLog('> HMAC: '+hmac.substring(0,24)+'...','ok');
+
+        // Step E: Submit
+        addLog('> Submitting to Bulletin Board...','');
+        var vr=await fetch('/api/vote',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({voter_id_for_ui:voterId,token:token,credential:credential,c1_array:c1j,c2_array:c2j,packet_hmac:hmac})});
+        var vd=await vr.json();
+        if(vd.error)throw new Error(vd.error);
+        addLog('> BALLOT VERIFIED & STORED','ok');
+
+        // Step F: Receipt
+        document.getElementById('receipt-hash').textContent=vd.receipt;
+        setTimeout(function(){goStepRaw(4);},1500);
+
+    }catch(err){addLog('> ERROR: '+err.message,'err');}
+}
+
+function goStepRaw(s){
+    for(var i=1;i<=4;i++){
+        var el=document.getElementById('wizard-step-'+i);if(el)el.classList.toggle('hidden',i!==s);
+        var dot=document.getElementById('step-dot-'+i);
+        if(dot){
+            if(i<s){dot.className='w-8 h-8 rounded-full flex items-center justify-center text-[12px] font-bold transition-all bg-secondary text-on-secondary';dot.innerHTML='<span class="material-symbols-outlined text-[16px] icon-fill">check</span>';}
+            else if(i===s){dot.className='w-8 h-8 rounded-full flex items-center justify-center text-[12px] font-bold transition-all bg-primary text-on-primary ring-2 ring-primary ring-offset-2';dot.textContent=i;}
+            else{dot.className='w-8 h-8 rounded-full flex items-center justify-center text-[12px] font-bold transition-all bg-surface-container-high text-on-surface-variant';dot.textContent=i;}
+        }
+        var lbl=document.getElementById('step-label-'+i);if(lbl)lbl.className='text-[12px] font-semibold hidden md:inline '+(i<=s?'text-primary':'text-on-surface-variant');
+        var line=document.getElementById('step-line-'+i);if(line)line.className='w-8 h-0.5 mx-1 '+(i<s?'bg-secondary':'bg-outline-variant');
+    }
+}
+</script>
+{% endblock %}

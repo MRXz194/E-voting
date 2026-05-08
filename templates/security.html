@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% block title %}SecureVote — Security Architecture{% endblock %}
+{% block body_class %}flex min-h-screen{% endblock %}
+
+{% block content %}
+{% set role = session.get('role') %}
+<!-- Sidebar -->
+<nav class="hidden md:flex flex-col w-[260px] bg-surface-container-lowest border-r border-outline-variant fixed left-0 top-0 h-full z-50 p-md">
+    <div class="flex items-center gap-sm mb-xl px-sm pt-sm">
+        <span class="material-symbols-outlined text-primary text-[28px] icon-fill">fingerprint</span>
+        <div><h1 class="text-[17px] font-bold text-primary leading-tight">SecureVote</h1><p class="text-[11px] text-on-surface-variant">Verified Digital Ballot</p></div>
+    </div>
+    <ul class="flex flex-col gap-1 flex-1">
+        <li><a href="{{ url_for('index') }}" class="flex items-center gap-md px-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high text-[13px] font-medium transition-colors"><span class="material-symbols-outlined text-[20px]">dashboard</span>Dashboard</a></li>
+        {% if role == 'admin' %}
+        <li><a href="{{ url_for('admin') }}" class="flex items-center gap-md px-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high text-[13px] font-medium transition-colors"><span class="material-symbols-outlined text-[20px]">admin_panel_settings</span>Admin Console</a></li>
+        {% endif %}
+        {% if role == 'voter' %}
+        <li><a href="{{ url_for('voter_dashboard') }}" class="flex items-center gap-md px-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high text-[13px] font-medium transition-colors"><span class="material-symbols-outlined text-[20px]">how_to_vote</span>My Ballot</a></li>
+        {% endif %}
+        <li><a href="{{ url_for('bulletin_board') }}" class="flex items-center gap-md px-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high text-[13px] font-medium transition-colors"><span class="material-symbols-outlined text-[20px]">list_alt</span>Public Ledger</a></li>
+        <li><a href="{{ url_for('security_page') }}" class="flex items-center gap-md px-md py-2.5 rounded-lg bg-primary text-on-primary text-[13px] font-semibold"><span class="material-symbols-outlined text-[20px] icon-fill">verified_user</span>Security</a></li>
+        {% if not role %}
+        <li><a href="{{ url_for('login') }}" class="flex items-center gap-md px-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high text-[13px] font-medium transition-colors"><span class="material-symbols-outlined text-[20px]">login</span>Login</a></li>
+        {% endif %}
+    </ul>
+    <div class="mt-auto pt-md border-t border-outline-variant">
+        {% if role == 'admin' %}
+        <div class="flex items-center gap-sm px-sm mb-sm">
+            <div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center"><span class="material-symbols-outlined text-on-primary-container text-[16px]">person</span></div>
+            <span class="text-[13px] font-semibold text-on-surface">Administrator</span>
+        </div>
+        <a href="{{ url_for('logout') }}" class="flex items-center gap-sm text-error hover:bg-error-container px-md py-2 rounded-lg text-[13px] font-medium transition-colors">
+            <span class="material-symbols-outlined text-[18px]">logout</span> Logout
+        </a>
+        {% elif role == 'voter' %}
+        <div class="flex items-center gap-sm px-sm mb-sm">
+            <div class="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center"><span class="material-symbols-outlined text-on-secondary-container text-[16px]">person</span></div>
+            <span class="text-[13px] font-semibold text-on-surface">{{ session.get('voter_name', 'Voter') }}</span>
+        </div>
+        <a href="{{ url_for('logout') }}" class="flex items-center gap-sm text-error hover:bg-error-container px-md py-2 rounded-lg text-[13px] font-medium transition-colors">
+            <span class="material-symbols-outlined text-[18px]">logout</span> Logout
+        </a>
+        {% else %}
+        <p class="text-[11px] text-on-surface-variant px-sm">SecureVote Protocol v2.1</p>
+        {% endif %}
+    </div>
+</nav>
+
+<main class="flex-1 md:ml-[260px] flex flex-col min-h-screen">
+    <header class="flex items-center justify-between px-margin py-md bg-surface-container-lowest border-b border-outline-variant sticky top-0 z-40">
+        <h2 class="text-h2 font-medium text-on-surface">Security Architecture</h2>
+    </header>
+
+    <div class="p-margin flex flex-col gap-lg max-w-[1200px] w-full mx-auto">
+        <!-- Hero -->
+        <div class="bg-surface-container-highest rounded-2xl p-xl border border-outline-variant text-center">
+            <span class="inline-block bg-primary text-on-primary text-label uppercase px-3 py-1 rounded-full tracking-widest mb-md">Cryptographic Security</span>
+            <h1 class="text-h1 text-on-surface mb-md">End-to-End Verifiable Security</h1>
+            <p class="text-body text-on-surface-variant max-w-xl mx-auto">SecureVote employs advanced cryptographic primitives to guarantee absolute anonymity, indisputable integrity, and public verifiability. Every ballot is mathematically sealed from device to tally.</p>
+        </div>
+
+        <!-- Cryptographic Flow -->
+        <h2 class="text-h2 font-semibold text-on-surface">The Cryptographic Flow</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-gutter">
+            {% set flow = [
+                {'icon':'touch_app','title':'1. Cast Intention','desc':'The voter\'s choice is established on the local device. No data leaves the client in plaintext.','tag':'State: Local Device'},
+                {'icon':'enhanced_encryption','title':'2. Encryption','desc':'The choice is encrypted using the Election Public Key. A Zero-Knowledge Proof is generated to prove the vote is valid.','tag':'System: ElGamal (ECC)'},
+                {'icon':'shuffle','title':'3. Mixnet Shuffle','desc':'Encrypted ballots are routed through a decentralized mixnet. Order is randomized, breaking the link to the voter.','tag':'Nodes: 5 Independent'},
+                {'icon':'bar_chart','title':'4. ZK-Tally','desc':'Homomorphic properties allow tallying of the encrypted votes. The final result is decrypted by threshold trustees.','tag':'Key: Threshold Split'}
+            ] %}
+            {% for f in flow %}
+            <div class="bg-surface-container-lowest rounded-2xl p-lg border border-outline-variant shadow-[0_4px_6px_-1px_rgb(0_0_0/0.05)] flex flex-col">
+                <div class="w-10 h-10 rounded-xl bg-primary-fixed flex items-center justify-center mb-md"><span class="material-symbols-outlined text-primary text-[20px]">{{ f.icon }}</span></div>
+                <h3 class="text-[14px] font-bold text-on-surface mb-sm">{{ f.title }}</h3>
+                <p class="text-[12px] text-on-surface-variant flex-1">{{ f.desc }}</p>
+                <p class="text-[11px] font-mono text-on-surface-variant mt-md pt-sm border-t border-outline-variant">{{ f.tag }}</p>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Crypto Details -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+            <div class="bg-surface-container-lowest rounded-2xl p-lg border border-outline-variant shadow-[0_4px_6px_-1px_rgb(0_0_0/0.05)]">
+                <div class="flex items-center gap-sm mb-md">
+                    <span class="material-symbols-outlined text-primary icon-fill">enhanced_encryption</span>
+                    <h3 class="text-[16px] font-bold text-on-surface">ElGamal Encryption</h3>
+                </div>
+                <p class="text-[13px] text-on-surface-variant mb-lg">SecureVote utilizes Exponential ElGamal to provide additive homomorphic properties necessary for the ZK-Tally.</p>
+                <div class="bg-inverse-surface text-inverse-on-surface rounded-xl p-md font-mono text-[12px] space-y-1 opacity-80">
+                    <p class="text-primary-fixed-dim"># Key Generation</p>
+                    <p>Private Key (sk) ∈ Z_q</p>
+                    <p>Public Key (pk) = sk × G</p>
+                    <p class="text-primary-fixed-dim mt-sm"># Encryption of Vote (v)</p>
+                    <p>m = g^v (Exponential encoding)</p>
+                    <p>C1 = g^k mod p</p>
+                    <p>C2 = m × pk^k mod p</p>
+                    <p>Ciphertext = (C1, C2)</p>
+                </div>
+            </div>
+            <div class="bg-surface-container-lowest rounded-2xl p-lg border border-outline-variant shadow-[0_4px_6px_-1px_rgb(0_0_0/0.05)]">
+                <div class="flex items-center gap-sm mb-md">
+                    <span class="material-symbols-outlined text-primary icon-fill">draw</span>
+                    <h3 class="text-[16px] font-bold text-on-surface">RSA Blind Signatures</h3>
+                </div>
+                <p class="text-[13px] text-on-surface-variant mb-lg">Used during the registration phase to authenticate a voter without the registrar knowing which ballot belongs to them, ensuring initial anonymity.</p>
+                <div class="bg-inverse-surface text-inverse-on-surface rounded-xl p-md font-mono text-[12px] space-y-2 opacity-80">
+                    <div class="flex items-center gap-2"><span class="bg-surface-container-high text-on-surface w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold shrink-0">1</span><span>Blind(Message, Random) ↓</span></div>
+                    <div class="flex items-center gap-2"><span class="bg-surface-container-high text-on-surface w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold shrink-0">2</span><span>Sign(Blinded Message) ↓</span></div>
+                    <div class="flex items-center gap-2"><span class="bg-surface-container-high text-on-surface w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold shrink-0">3</span><span>Unblind(Signature)</span></div>
+                    <p class="text-primary-fixed-dim mt-sm">Curve: RSA-512</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Security Properties Table -->
+        <h2 class="text-h2 font-semibold text-on-surface">System Security Properties</h2>
+        <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-[0_4px_6px_-1px_rgb(0_0_0/0.05)] overflow-hidden">
+            <table class="w-full text-left border-collapse">
+                <thead class="bg-surface-container-low border-b border-outline-variant">
+                    <tr>
+                        <th class="p-md text-label uppercase text-on-surface-variant">Property</th>
+                        <th class="p-md text-label uppercase text-on-surface-variant">Description</th>
+                        <th class="p-md text-label uppercase text-on-surface-variant">Mechanism</th>
+                    </tr>
+                </thead>
+                <tbody class="text-[13px] divide-y divide-outline-variant/50">
+                    <tr class="hover:bg-surface-container-low/50"><td class="p-md font-semibold text-primary">Anonymity</td><td class="p-md text-on-surface-variant">The system cannot link a specific cast ballot back to the voter who submitted it.</td><td class="p-md"><span class="bg-primary-fixed text-on-primary-fixed px-2 py-0.5 rounded text-[11px] font-semibold">Blind Shuffle</span></td></tr>
+                    <tr class="hover:bg-surface-container-low/50"><td class="p-md font-semibold text-primary">Integrity</td><td class="p-md text-on-surface-variant">No ballot can be modified, added, or deleted without detection during transit or storage.</td><td class="p-md"><span class="bg-primary-fixed text-on-primary-fixed px-2 py-0.5 rounded text-[11px] font-semibold">Digital Signature</span></td></tr>
+                    <tr class="hover:bg-surface-container-low/50"><td class="p-md font-semibold text-primary">Verifiability (Individual)</td><td class="p-md text-on-surface-variant">A voter can independently verify that their specific ballot was included in the final tally.</td><td class="p-md"><span class="bg-primary-fixed text-on-primary-fixed px-2 py-0.5 rounded text-[11px] font-semibold">Tracking Check</span></td></tr>
+                    <tr class="hover:bg-surface-container-low/50"><td class="p-md font-semibold text-primary">Verifiability (Universal)</td><td class="p-md text-on-surface-variant">Anyone can verify that all recorded ballots were tallied correctly without decrypting them.</td><td class="p-md"><span class="bg-primary-fixed text-on-primary-fixed px-2 py-0.5 rounded text-[11px] font-semibold">Zero-Knowledge Proofs</span></td></tr>
+                    <tr class="hover:bg-surface-container-low/50"><td class="p-md font-semibold text-primary">Coercion Resistance</td><td class="p-md text-on-surface-variant">A voter cannot prove to a third party which candidate they voted for, preventing vote buying.</td><td class="p-md"><span class="bg-primary-fixed text-on-primary-fixed px-2 py-0.5 rounded text-[11px] font-semibold">Receipt Freeness</span></td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Trust Banner -->
+        <div class="bg-inverse-surface text-inverse-on-surface rounded-2xl p-xl flex items-center justify-between">
+            <div>
+                <h3 class="text-[20px] font-bold mb-sm">Trust through Mathematics</h3>
+                <p class="text-[13px] opacity-80 max-w-lg">SecureVote moves away from "trust me" models. Our open-source cryptographic foundation allows independent auditors to verify the math, ensuring the democratic process remains fundamentally transparent and unassailable.</p>
+            </div>
+            <div class="w-16 h-16 rounded-2xl bg-surface-container-high/20 flex items-center justify-center shrink-0 ml-lg">
+                <span class="material-symbols-outlined text-secondary-fixed text-[32px]">security</span>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}

@@ -1,95 +1,45 @@
 {% extends "base.html" %}
-
+{% block title %}SecureVote — Register{% endblock %}
+{% block body_class %}flex items-center justify-center min-h-screen{% endblock %}
 {% block content %}
-<div class="card" style="max-width: 600px; margin: 0 auto;">
-    <div class="text-center mb-2">
-        <h2>Đăng Ký Khóa (Registration Phase)</h2>
-        <p>Thuật toán: RSA Blind Signature (Chaum)</p>
-    </div>
-
-    <div
-        style="background: rgba(99, 102, 241, 0.1); padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem; border-left: 4px solid var(--primary);">
-        <h4 style="margin-bottom: 0.5rem; color: #818cf8;">Quy Trình:</h4>
-        <ol style="margin-left: 1.5rem; color: var(--text-muted); font-size: 0.9rem; line-height: 1.5;">
-            <li>Trình duyệt sinh ngẫu nhiên Token và Blinding Factor <span style="font-family: monospace;">r</span>.
-            </li>
-            <li>Trình duyệt "mù hóa" Token và gửi lên Registration Authority (RA).</li>
-            <li>RA kiểm tra danh tính cử tri (ID) và ký lên Token mù.</li>
-            <li>Trình duyệt "giải mù" để có được Signature thật, tạo thành Credential hợp lệ.</li>
-        </ol>
-    </div>
-
-    <div id="register-form">
-        <div class="form-group">
-            <label for="voter_id">Mã Cử Tri (Voter ID)</label>
-            <input type="text" id="voter_id" name="voter_id" placeholder="VD: voter_12345" required>
+<main class="w-full max-w-[500px] mx-auto p-margin">
+    <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-[0_4px_6px_-1px_rgb(0_0_0/0.05)] overflow-hidden">
+        <div class="p-lg border-b border-outline-variant bg-surface-container-low flex items-center gap-sm">
+            <span class="material-symbols-outlined text-primary">key</span>
+            <h2 class="text-h2 font-semibold text-on-surface">Registration — RSA Blind Signature</h2>
         </div>
-
-        <div class="form-group">
-            <label for="secret_code">Mã Bí Mật (Secret Code)</label>
-            <input type="password" id="secret_code" name="secret_code" placeholder="Mã 6 số cấp bởi Admin" required>
+        <div class="p-xl space-y-lg">
+            <div class="space-y-sm">
+                <label class="text-label uppercase text-on-surface-variant block">Voter ID</label>
+                <input type="text" id="voter_id" placeholder="e.g. voter_123" required class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-md py-2.5 text-[13px] font-mono text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-colors">
+            </div>
+            <div class="space-y-sm">
+                <label class="text-label uppercase text-on-surface-variant block">Secret Code</label>
+                <input type="password" id="secret_code" placeholder="6-digit code" required class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-md py-2.5 text-[13px] font-mono text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-colors">
+            </div>
+            <button onclick="performBlindSignature()" class="w-full bg-primary text-on-primary text-[13px] font-semibold py-3 rounded-lg flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors border-b-[3px] border-primary-fixed-dim"><span class="material-symbols-outlined text-[18px]">key</span>Perform Blind Signature</button>
+            <div id="status-console" class="hidden bg-inverse-surface text-inverse-on-surface rounded-xl p-md font-mono text-[11px] break-all"></div>
         </div>
-
-        <button onclick="performBlindSignature()" class="btn btn-primary" style="width: 100%;">
-            Thực Hiện Blind Signature Trình Duyệt
-        </button>
     </div>
-
-    <div id="status-console" class="mt-2"
-        style="display: none; background: rgba(0,0,0,0.4); padding: 1rem; border-radius: 8px; font-family: monospace; font-size: 0.85rem; color: #a5b4fc; word-break: break-all;">
-    </div>
-</div>
-
+</main>
+{% endblock %}
+{% block scripts %}
 <script src="{{ url_for('static', filename='crypto.js') }}"></script>
 <script>
-    async function performBlindSignature() {
-        const voterId = document.getElementById('voter_id').value.trim();
-        const secretCode = document.getElementById('secret_code').value.trim();
-        if (!voterId || !secretCode) return alert("Vui lòng nhập đầy đủ Voter ID và Mã Bí Mật");
-
-        const consoleDiv = document.getElementById('status-console');
-        consoleDiv.style.display = 'block';
-        consoleDiv.innerHTML = '> Lấy khóa công khai từ Server...<br>';
-
-        try {
-            const res = await fetch('/api/public-keys');
-            const keys = await res.json();
-            const rsaN = BigInt(keys.rsa.N);
-            const rsaE = BigInt(keys.rsa.e);
-
-            const token = `tok_${voterId}_${Math.floor(Math.random() * 1000000000)}`;
-            consoleDiv.innerHTML += `> Token tạo cục bộ: ${token}<br>`;
-
-            consoleDiv.innerHTML += `> Đang tính Blinded Token...<br>`;
-            const { blinded, r } = await CryptoUtils.blindToken(token, rsaN, rsaE);
-
-            consoleDiv.innerHTML += `> Gửi Blinded Token lên RA để ký...<br>`;
-            const signRes = await fetch('/api/register/sync', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    voter_id: voterId,
-                    secret_code: secretCode,
-                    blinded_token: blinded
-                })
-            });
-
-            const signData = await signRes.json();
-            if (signData.error) throw new Error(signData.error);
-
-            consoleDiv.innerHTML += `> Giải mù chữ ký (Unblinding)...<br>`;
-            const credential = CryptoUtils.unblindSignature(signData.blind_signature, r, rsaN);
-
-            sessionStorage.setItem("voter_id", voterId);
-            sessionStorage.setItem("voter_token", token);
-            sessionStorage.setItem("voter_credential", credential);
-
-            consoleDiv.innerHTML += `<span style="color: #34d399">> THÀNH CÔNG! Đã lưu Credential Zero-Knowledge vào SessionStorage. Chuyển sang bỏ phiếu...</span><br>`;
-            setTimeout(() => { window.location.href = '/vote'; }, 2000);
-
-        } catch (err) {
-            consoleDiv.innerHTML += `<span style="color: #ef4444">> LỖI: ${err.message}</span><br>`;
-        }
-    }
+async function performBlindSignature(){
+    var vid=document.getElementById('voter_id').value.trim(),sc=document.getElementById('secret_code').value.trim();
+    if(!vid||!sc)return alert("Fill both fields");
+    var c=document.getElementById('status-console');c.classList.remove('hidden');c.innerHTML='> Fetching keys...<br>';
+    try{var r=await fetch('/api/public-keys');var k=await r.json();var N=BigInt(k.rsa.N),E=BigInt(k.rsa.e);
+    var tok='tok_'+vid+'_'+Math.floor(Math.random()*1e9);c.innerHTML+='> Token: '+tok+'<br>';
+    var{blinded,r:bf}=await CryptoUtils.blindToken(tok,N,E);c.innerHTML+='> Sending to RA...<br>';
+    var sr=await fetch('/api/register/sync',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({voter_id:vid,secret_code:sc,blinded_token:blinded})});
+    var sd=await sr.json();if(sd.error)throw new Error(sd.error);
+    var cred=CryptoUtils.unblindSignature(sd.blind_signature,bf,N);
+    sessionStorage.setItem("voter_id",vid);sessionStorage.setItem("voter_token",tok);sessionStorage.setItem("voter_credential",cred);
+    c.innerHTML+='<span class="text-secondary-fixed">> SUCCESS! Redirecting...</span><br>';
+    setTimeout(function(){window.location.href='/vote';},1500);
+    }catch(e){c.innerHTML+='<span class="text-error">> ERROR: '+e.message+'</span><br>';}
+}
 </script>
 {% endblock %}

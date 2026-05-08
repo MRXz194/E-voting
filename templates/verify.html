@@ -1,44 +1,24 @@
 {% extends "base.html" %}
-
+{% block title %}SecureVote — Verify{% endblock %}
+{% block body_class %}flex items-center justify-center min-h-screen{% endblock %}
 {% block content %}
-<div class="card" style="max-width: 800px; margin: 0 auto;">
-    <h2 class="mb-2">Tra Cứu Phiếu Bầu</h2>
-
-    {% if ballot %}
-    <div
-        style="background: rgba(16, 185, 129, 0.1); padding: 2rem; border-radius: 8px; border: 1px solid rgba(16,185,129,0.3); text-align: center;">
-        <div style="color: #34d399; font-size: 4rem; margin-bottom: 1rem;">✓</div>
-        <h3 style="color: #34d399; margin-bottom: 1rem;">Thông Tin Hợp Lệ! Phiếu Đã Nằm Trên BB</h3>
-
-        <div style="text-align: left; background: rgba(0,0,0,0.3); padding: 1.5rem; border-radius: 8px;">
-            <p><strong>Receipt:</strong> <span class="hash-text">{{ ballot.receipt }}</span></p>
-            <p class="mt-1"><strong>Voter Token Hash:</strong> <span class="hash-text">{{ ballot.token_hash }}</span>
-            </p>
-            <p class="mt-1"><strong>Thời Gian Thu Nhận:</strong> {{ ballot.submitted_at.strftime('%Y-%m-%d %H:%M:%S') }}
-                UTC</p>
-            <hr style="border-color: var(--border); margin: 1rem 0;">
-            <p class="text-muted" style="font-size: 0.9rem;">Ciphertext ElGamal (được dùng để tham gia quá trình cộng
-                Homomorphic):</p>
-            <div
-                style="display: grid; grid-template-columns: auto 1fr; gap: 1rem; margin-top: 0.5rem; word-break: break-all;">
-                <strong>C1:</strong> <span class="hash-text">{{ ballot.c1[:60] }}{% if ballot.c1|length > 60 %}...{%
-                    endif %}</span>
-                <strong>C2:</strong> <span class="hash-text">{{ ballot.c2[:60] }}{% if ballot.c2|length > 60 %}...{%
-                    endif %}</span>
-            </div>
+<main class="w-full max-w-[500px] mx-auto p-margin">
+    <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-[0_4px_6px_-1px_rgb(0_0_0/0.05)] p-xl text-center">
+        {% if ballot %}
+        <span class="material-symbols-outlined text-secondary text-[56px] mb-md block icon-fill">verified</span>
+        <h2 class="text-h1 text-on-surface mb-sm">Ballot Found</h2>
+        <p class="text-body text-on-surface-variant mb-lg">This ballot exists on the public ledger and is verified.</p>
+        <div class="bg-inverse-surface text-inverse-on-surface rounded-xl p-md text-left font-mono text-[11px] space-y-1 opacity-80">
+            <p>Receipt: {{ receipt }}</p>
+            <p>Token Hash: {{ ballot.token_hash[:32] }}...</p>
+            <p>Submitted: {{ ballot.submitted_at }}</p>
         </div>
+        {% else %}
+        <span class="material-symbols-outlined text-error text-[56px] mb-md block">error</span>
+        <h2 class="text-h1 text-on-surface mb-sm">Not Found</h2>
+        <p class="text-body text-on-surface-variant">No ballot matching receipt hash <span class="font-mono text-[12px]">{{ receipt }}</span> was found.</p>
+        {% endif %}
+        <a href="{{ url_for('bulletin_board') }}" class="inline-flex items-center gap-1.5 mt-lg text-primary text-[13px] font-semibold hover:underline"><span class="material-symbols-outlined text-[16px]">arrow_back</span>Back to Ledger</a>
     </div>
-    {% else %}
-    <div
-        style="background: rgba(239, 68, 68, 0.1); padding: 2rem; border-radius: 8px; border: 1px solid rgba(239,68,68,0.3); text-align: center;">
-        <div style="color: #ef4444; font-size: 4rem; margin-bottom: 1rem;">✗</div>
-        <h3 style="color: #ef4444; margin-bottom: 1rem;">Không Tìm Thấy Phiếu!</h3>
-        <p>Biên nhận <span class="hash-text">{{ receipt }}</span> không tồn tại trong Bulletin Board.</p>
-    </div>
-    {% endif %}
-
-    <div class="text-center mt-2">
-        <a href="/bulletin_board" class="btn btn-primary">Trở về Bulletin Board</a>
-    </div>
-</div>
+</main>
 {% endblock %}
