@@ -201,6 +201,11 @@ def admin():
         ElectionConfig.query.delete()
         
         db.session.add(cfg)
+        
+        # Add 10 default voters with easy secret codes (000001 -> 000010)
+        for i in range(1, 11):
+            db.session.add(Voter(voter_id=f"voter{i}", name=f"Default Voter {i}", secret_code=f"{i:06d}"))
+
         db.session.commit()
         flash("Election initialized. EA/RA keys generated successfully.", "success")
         return redirect(url_for("admin"))
@@ -243,12 +248,14 @@ def add_voter():
 @app.route("/admin/add-bulk-voters", methods=["POST"])
 @admin_required
 def add_bulk_voters():
+    count = Voter.query.count()
     added = 0
     for i in range(10):
-        vid = f"voter{i+1}"
+        index = count + i + 1
+        vid = f"voter{index}"
         if not Voter.query.filter_by(voter_id=vid).first():
             code = "".join([str(random.randint(0, 9)) for _ in range(6)])
-            db.session.add(Voter(voter_id=vid, name=f"Voter {i+1}", secret_code=code))
+            db.session.add(Voter(voter_id=vid, name=f"Demo Voter {index}", secret_code=code))
             added += 1
     db.session.commit()
     flash(f"{added} demo voters added successfully.", "success")
@@ -454,6 +461,11 @@ def setup():
             rsa_d=str(rsa_priv.d)
         )
         db.session.add(cfg)
+        
+        # Add 10 default voters with easy secret codes (000001 -> 000010)
+        for i in range(1, 11):
+            db.session.add(Voter(voter_id=f"voter{i}", name=f"Default Voter {i}", secret_code=f"{i:06d}"))
+
         db.session.commit()
         flash("Election setup complete! Keys generated.", "success")
         return redirect(url_for("admin"))
@@ -525,4 +537,4 @@ def security_page():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=False)
+    app.run(host="127.0.0.1", port=5000, debug=False)
