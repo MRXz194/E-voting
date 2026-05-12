@@ -168,6 +168,19 @@ Open your browser at [http://localhost:5000](http://localhost:5000).
 3. **Voting**: Logout and login as a Voter. Follow the 4-step wizard to cast an anonymous ballot.
 4. **Tallying**: Login as Admin, close the voting, and watch the homomorphic tally compute the winner!
 
+### 4. Running Tests
+The project includes 25+ automated tests covering cryptography primitives, API integrity, and security vulnerabilities.
+
+```bash
+# Run the entire test suite
+pytest
+
+# Run specific test modules
+pytest tests/test_crypto.py    # Primitives & Math
+pytest tests/test_security.py  # Attack resistance (Double voting, etc.)
+pytest tests/test_api.py       # Integration & API flow
+```
+
 ---
 
 ## Tech Stack
