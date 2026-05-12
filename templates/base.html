@@ -138,6 +138,22 @@
         setTimeout(function(){var c=document.getElementById('flash-container');if(c){c.style.opacity='0';setTimeout(function(){c.remove()},300)}},5000);
     </script>
 
+    <script>
+    /* Force English validation messages */
+    document.addEventListener('DOMContentLoaded',function(){
+        document.querySelectorAll('input,select,textarea').forEach(function(el){
+            el.addEventListener('invalid',function(){
+                if(el.validity.valueMissing) el.setCustomValidity('Please fill in this field.');
+                else if(el.validity.typeMismatch) el.setCustomValidity('Please enter a valid value.');
+                else if(el.validity.tooShort) el.setCustomValidity('Please lengthen this text.');
+                else if(el.validity.patternMismatch) el.setCustomValidity('Please match the requested format.');
+                else el.setCustomValidity('');
+            });
+            el.addEventListener('input',function(){el.setCustomValidity('');});
+        });
+    });
+    </script>
+
     {% block scripts %}{% endblock %}
 </body>
 </html>
