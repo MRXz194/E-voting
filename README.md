@@ -169,7 +169,7 @@ Open your browser at [http://localhost:5000](http://localhost:5000).
 4. **Tallying**: Login as Admin, close the voting, and watch the homomorphic tally compute the winner!
 
 ### 4. Running Tests
-The project includes 25+ automated tests covering cryptography primitives, API integrity, and security vulnerabilities.
+The project includes 22 automated tests covering cryptography primitives, API integrity, and security vulnerabilities.
 
 ```bash
 # Run the entire test suite
@@ -187,7 +187,21 @@ pytest tests/test_api.py       # Integration & API flow
 - **Backend**: Python 3.10+ / Flask 3.0
 - **Database**: SQLite (SQLAlchemy)
 - **Crypto Engine**: Pure Python (Built from scratch in `crypto/`)
-- **Testing**: Pytest (25+ security-focused tests)
+- **Testing**: Pytest (22 security-focused tests)
+
+---
+
+## Test Results
+The system has been verified with **22 automated tests** covering cryptography, security, and integration scenarios.
+
+| Category | Specific Test Scenarios | Status |
+|---|---|---|
+| **Cryptographic Primitives** | ElGamal Encryption, RSA Blind Signature Cycle, BSGS Discrete Log, Modular Inverse, Prime Generation | ✅ PASS |
+| **Identity & Registration** | Authorized Registration, Rejection of Wrong Secret Codes, Credential Reuse Prevention, Registration Abuse Protection | ✅ PASS |
+| **Ballot Security** | Double-Voting Prevention (Single & Bulk), Credential Forgery Detection, Unauthorized Voter Rejection | ✅ PASS |
+| **Data Integrity** | HMAC-SHA256 Payload Verification, Man-in-the-Middle Tampering Detection, Receipt Integrity | ✅ PASS |
+| **System Lifecycle** | Pre-Voting Submissions, Post-Voting Submissions, Premature Tally Prevention, Valid Tally Computation | ✅ PASS |
+| **Advanced Scenarios** | Full Voter Workflow (Step 1-4), ZKP Vulnerability (Vote Inflation) Documentation | ✅ PASS |
 
 ---
 
