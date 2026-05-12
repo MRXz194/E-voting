@@ -20,8 +20,6 @@
 - [Stress Testing](#stress-testing)
 - [Access Control](#access-control)
 - [Security Considerations](#security-considerations)
-- [Known Limitations](#known-limitations)
-- [License](#license)
 
 ---
 
@@ -54,7 +52,8 @@ The system guarantees:
 - 📊 **Real-time Tally** — Shanks' Baby-Step Giant-Step (BSGS) algorithm to recover discrete log vote counts
 - ⚡ **Async Registration** — Celery + Redis for offloading RSA signing under high load
 - 🔒 **Role-based Access Control** — Admin / Voter / Guest session management with decorators
-- 🧪 **22+ Automated Tests** — covering crypto primitives, attack resistance, security scenarios, and API correctness
+- 🧪 **25+ Automated Tests** — covering crypto primitives, attack resistance, security scenarios, and API correctness
+- 📊 **Performance Benchmarks** — Homomorphic tally vs. individual decrypt, BSGS vs. brute-force discrete log
 - 📈 **Load Testing** — Locust stress test with full voting flow for up to 10,000 concurrent voters
 
 ---
@@ -214,7 +213,7 @@ Setup ──→ Voting (Active) ──→ Tallying (Closed)
 | **Task Queue** | Celery 5.4.0 + Redis 5.0.7 (async RSA signing) |
 | **Frontend** | Jinja2 Templates, Vanilla JS, Tailwind CSS (CDN) |
 | **Icons** | Google Material Symbols |
-| **Fonts** | Inter + Plus Jakarta Sans (Google Fonts) |
+| **Fonts** | Plus Jakarta Sans + JetBrains Mono (Google Fonts) |
 | **Testing** | pytest 8.2.0 |
 | **Load Testing** | Locust 2.29.0 |
 
@@ -224,11 +223,13 @@ Setup ──→ Voting (Active) ──→ Tallying (Closed)
 
 ```
 E-voting/
-├── app.py                  # Main Flask application & all routes (529 lines)
+├── app.py                  # Main Flask application & all routes (541 lines)
 ├── models.py               # SQLAlchemy models (ElectionConfig, Voter, Ballot)
 ├── tasks.py                # Celery task factory (async RSA signing)
 ├── locustfile.py           # Locust load test — full voting flow
+├── seed_stress_voters.py   # Seed 10,000 test voters for stress testing
 ├── requirements.txt        # Python dependencies
+├── E_Voting_Report.pdf     # Technical report document
 ├── README.md               # This file
 │
 ├── crypto/                 # Pure-Python cryptographic primitives
@@ -259,11 +260,13 @@ E-voting/
 │   └── style.css           # Custom stylesheets
 │
 ├── tests/
+│   ├── conftest.py         # Shared pytest fixtures (Flask test client)
 │   ├── test_crypto.py      # Unit tests: ElGamal homomorphic, RSA blind sig, BSGS
 │   ├── test_api.py         # Integration tests: login, setup, API endpoints
 │   ├── test_security.py    # 10 security tests: double-vote, forgery, HMAC, etc.
 │   ├── test_scenarios.py   # Scenario tests: unauthorized voter, HMAC tampering
-│   └── test_attack_zkp.py  # ZKP vulnerability demonstration (vote inflation)
+│   ├── test_attack_zkp.py  # ZKP vulnerability demonstration (vote inflation)
+│   └── test_homo_bsgs_efficency.py  # Benchmark: homomorphic tally & BSGS vs brute force
 │
 └── instance/
     └── evoting.db          # SQLite database (auto-created on first run)
@@ -473,8 +476,8 @@ celery -A app.celery worker --loglevel=info --pool=solo
 
 1. Open **http://localhost:5000** → Click **Login**
 2. Login as **admin** (`admin` / `admin`) → go to **Admin Console**
-3. Enter election name and candidates (comma-separated) → click **Create Election**
-4. Click **Add 10 Demo Voters** for quick setup or add individually
+3. Enter your own election name and candidates (comma-separated) → click **Initialize Election & Generate Keys**
+4. Add voters individually or click **+10 Demo Voters** for quick setup — note the **Secret Code** for each voter
 5. Click **Open Voting** to start the voting phase
 6. Logout → Login as a **voter** using Voter ID + secret code (shown in admin panel)
 7. Complete the 4-step voting wizard on **Voter Dashboard**:
@@ -482,8 +485,9 @@ celery -A app.celery worker --loglevel=info --pool=solo
    - Step 2: Request RA to sign the blinded token
    - Step 3: Unblind signature → obtain anonymous credential
    - Step 4: Encrypt vote (ElGamal) + compute HMAC → submit
-8. Login as admin → click **Close Voting** to trigger homomorphic tally
-9. View results in **Admin Console** and **System Overview** (`/`)
+8. Login as admin → click **Close Voting & Start Tally** to trigger homomorphic tally
+9. View results in **Admin Console → Results** tab and **System Overview** (`/`)
+10. Navigate to **Public Ledger** (`/bulletin_board`) → verify a receipt to confirm vote existence
 
 ---
 
@@ -513,6 +517,7 @@ pytest tests/ --tb=short
 | `test_security.py` | 10 | Happy path, double-vote (×1 & ×1000), credential reuse, registration abuse, forged credential, HMAC tampering, wrong secret code, voting outside phase (×2), unauthorized voter, ballot count integrity |
 | `test_scenarios.py` | 4 | Unauthorized registration, HMAC tampering, closed-session vote, premature tally |
 | `test_attack_zkp.py` | 1 | ZKP vulnerability: vote inflation attack (encoding 1000 instead of 0/1) |
+| `test_homo_bsgs_efficency.py` | — | Performance benchmark (not pytest): homomorphic tally vs. individual decrypt, BSGS vs. brute-force discrete log across 100–5000 voters |
 
 ### Notable Test: ZKP Vulnerability Demo
 
@@ -615,23 +620,5 @@ Route                     Guest   Voter   Admin
 
 ---
 
-## Known Limitations
 
-1. **No Zero-Knowledge Proofs (ZKP):** A malicious voter can encrypt arbitrary values (e.g., `g^1000`) instead of `g^0` or `g^1`, inflating vote counts. The `test_attack_zkp.py` test demonstrates this vulnerability.
 
-2. **Key size:** ElGamal uses 256-bit safe primes and RSA uses 512-bit keys — adequate for demonstration but insufficient for production (recommend 2048+ bit RSA, 2048+ bit ElGamal).
-
-3. **Discrete log recovery:** The BSGS tally recovery has O(√N) complexity, which limits the practical voter count. For very large elections, use alternative encoding schemes.
-
-4. **Single-server architecture:** EA and RA are co-located. In a real election, these must be operated by separate, mutually distrustful entities.
-
----
-
-## License
-
-MIT License — for academic and educational use.
-
----
-
-*SecureVote — End-to-end encrypted e-voting with homomorphic tallying.*
-*Cryptographic Protocol v2.1 | Flask + ElGamal + RSA Blind Signature + HMAC-SHA256*

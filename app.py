@@ -113,7 +113,7 @@ def get_tally_data(cfg, ballots, candidates):
     return results, winner_obj, total_count
 
 
-# ROUTES — TRANG CHỦ & AUTH
+# ROUTES 
 @app.route("/")
 def index():
     cfg = get_config()

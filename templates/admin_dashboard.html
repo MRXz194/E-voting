@@ -52,11 +52,11 @@
             <form method="POST" action="{{ url_for('admin') }}" class="max-w-lg mx-auto space-y-md text-left">
                 <div>
                     <label class="text-label uppercase text-on-surface-variant block mb-1">Election Name</label>
-                    <input name="election_name" type="text" required value="National Election 2024" class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-md py-2.5 text-[13px] font-mono text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-colors">
+                    <input name="election_name" type="text" required placeholder="Enter election name..." class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-md py-2.5 text-[13px] font-mono text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-colors">
                 </div>
                 <div>
                     <label class="text-label uppercase text-on-surface-variant block mb-1">Candidates (comma separated)</label>
-                    <input name="candidates_str" type="text" required value="Alice, Bob, Charlie" class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-md py-2.5 text-[13px] font-mono text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-colors">
+                    <input name="candidates_str" type="text" required placeholder="Candidate 1, Candidate 2, Candidate 3" class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-md py-2.5 text-[13px] font-mono text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-colors">
                 </div>
                 <button type="submit" class="w-full bg-primary text-on-primary text-[13px] font-semibold py-3 rounded-lg flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors border-b-[3px] border-primary-fixed-dim shadow-sm">
                     <span class="material-symbols-outlined text-[18px]">rocket_launch</span> Initialize Election & Generate Keys
