@@ -162,13 +162,19 @@ python app.py
 ```
 Open your browser at [http://localhost:5000](http://localhost:5000).
 
-### 3. Quick Demo Guide
+### 3. Default Credentials
+| Role | Login | Password / Code |
+|---|---|---|
+| **Admin** | `admin` | `admin` |
+| **Voter** | Voter ID (e.g. `voter1`) | 6-digit secret code shown in Admin Console |
+
+### 4. Quick Demo Guide
 1. **Admin Setup**: Login as `admin`/`admin`. Initialize the election and generate keys.
 2. **Add Voters**: Create demo voters and copy their **Secret Codes**.
 3. **Voting**: Logout and login as a Voter. Follow the 4-step wizard to cast an anonymous ballot.
 4. **Tallying**: Login as Admin, close the voting, and watch the homomorphic tally compute the winner!
 
-### 4. Running Tests
+### 5. Running Tests
 The project includes 22 automated tests covering cryptography primitives, API integrity, and security vulnerabilities.
 
 ```bash
